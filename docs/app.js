@@ -146,7 +146,7 @@ expenseForm.addEventListener('submit', async (e) => {
         }, 2000);
         
         // Check budget status after expense
-        checkBudgetAfterExpense(selectedCategory, amount);
+        checkBudgetAfterExpense(selectedCard, selectedCategory, amount);
         
         // Reset form for quick re-entry
         amountInput.value = '';
@@ -627,14 +627,24 @@ async function loadUserBudget() {
         if (budgetDoc.exists) {
             userBudget = budgetDoc.data();
         } else {
-            // Initialize with default budget
+            // Initialize with default card-specific budget structure
             userBudget = {
-                food: 0,
-                delivery: 0,
-                groceries: 0,
-                shopping: 0,
-                entertainment: 0,
-                other: 0
+                neo: {
+                    food: 0,
+                    delivery: 0,
+                    groceries: 0,
+                    shopping: 0,
+                    entertainment: 0,
+                    other: 0
+                },
+                rbc: {
+                    food: 0,
+                    delivery: 0,
+                    groceries: 0,
+                    shopping: 0,
+                    entertainment: 0,
+                    other: 0
+                }
             };
         }
     } catch (error) {
@@ -660,17 +670,40 @@ async function checkFirstTimeUser() {
 const budgetModal = document.getElementById('budgetModal');
 const budgetForm = document.getElementById('budgetForm');
 const manageBudgetBtn = document.getElementById('manageBudgetBtn');
+let currentBudgetCard = 'neo';
 
 manageBudgetBtn.addEventListener('click', showBudgetModal);
 
+// Budget tab functionality
+document.querySelectorAll('.budget-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        const card = tab.dataset.card;
+        
+        // Update active tab
+        document.querySelectorAll('.budget-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        // Show corresponding budget section
+        document.querySelectorAll('.card-budget-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        document.querySelector(`[data-card="${card}"]`).classList.add('active');
+        
+        currentBudgetCard = card;
+        updateBudgetTotal();
+    });
+});
+
 function showBudgetModal() {
-    // Populate current budget values
+    // Populate current budget values for both cards
     if (userBudget) {
-        categories.forEach(category => {
-            const input = document.getElementById(`budget${category.charAt(0).toUpperCase() + category.slice(1)}`);
-            if (input) {
-                input.value = userBudget[category] || 0;
-            }
+        ['neo', 'rbc'].forEach(card => {
+            categories.forEach(category => {
+                const input = document.getElementById(`budget${card.charAt(0).toUpperCase() + card.slice(1)}${category.charAt(0).toUpperCase() + category.slice(1)}`);
+                if (input && userBudget[card]) {
+                    input.value = userBudget[card][category] || 0;
+                }
+            });
         });
         updateBudgetTotal();
     }
@@ -682,31 +715,45 @@ function closeBudgetModal() {
 }
 
 // Update total preview as user types
-categories.forEach(category => {
-    const input = document.getElementById(`budget${category.charAt(0).toUpperCase() + category.slice(1)}`);
-    if (input) {
-        input.addEventListener('input', updateBudgetTotal);
-    }
+['neo', 'rbc'].forEach(card => {
+    categories.forEach(category => {
+        const input = document.getElementById(`budget${card.charAt(0).toUpperCase() + card.slice(1)}${category.charAt(0).toUpperCase() + category.slice(1)}`);
+        if (input) {
+            input.addEventListener('input', updateBudgetTotal);
+        }
+    });
 });
 
 function updateBudgetTotal() {
-    let total = 0;
+    let neoTotal = 0;
+    let rbcTotal = 0;
+    
     categories.forEach(category => {
-        const input = document.getElementById(`budget${category.charAt(0).toUpperCase() + category.slice(1)}`);
-        if (input) {
-            total += parseFloat(input.value) || 0;
-        }
+        const neoInput = document.getElementById(`budgetNeo${category.charAt(0).toUpperCase() + category.slice(1)}`);
+        const rbcInput = document.getElementById(`budgetRbc${category.charAt(0).toUpperCase() + category.slice(1)}`);
+        
+        if (neoInput) neoTotal += parseFloat(neoInput.value) || 0;
+        if (rbcInput) rbcTotal += parseFloat(rbcInput.value) || 0;
     });
-    document.getElementById('budgetTotalPreview').textContent = `$${total}`;
+    
+    document.getElementById('budgetNeoTotal').textContent = `$${neoTotal}`;
+    document.getElementById('budgetRbcTotal').textContent = `$${rbcTotal}`;
+    document.getElementById('budgetTotalPreview').textContent = `$${neoTotal + rbcTotal}`;
 }
 
 budgetForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const newBudget = {};
-    categories.forEach(category => {
-        const input = document.getElementById(`budget${category.charAt(0).toUpperCase() + category.slice(1)}`);
-        newBudget[category] = parseFloat(input.value) || 0;
+    const newBudget = {
+        neo: {},
+        rbc: {}
+    };
+    
+    ['neo', 'rbc'].forEach(card => {
+        categories.forEach(category => {
+            const input = document.getElementById(`budget${card.charAt(0).toUpperCase() + card.slice(1)}${category.charAt(0).toUpperCase() + category.slice(1)}`);
+            newBudget[card][category] = parseFloat(input.value) || 0;
+        });
     });
     
     try {
@@ -724,6 +771,22 @@ budgetForm.addEventListener('submit', async (e) => {
         console.error('Error saving budget:', error);
         alert('Failed to save budget. Please try again.');
     }
+});
+
+// Dashboard card view functionality
+let currentDashboardView = 'combined';
+
+document.querySelectorAll('.card-view-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        const view = tab.dataset.view;
+        
+        // Update active tab
+        document.querySelectorAll('.card-view-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        currentDashboardView = view;
+        loadDashboard();
+    });
 });
 
 // Dashboard Functions
@@ -744,27 +807,62 @@ async function loadDashboard() {
             .where('timestamp', '>=', startOfMonth)
             .get();
         
-        // Calculate totals by category
-        const categoryTotals = {};
-        let totalSpent = 0;
+        // Calculate totals by card and category
+        const cardExpenses = {
+            neo: {},
+            rbc: {}
+        };
         
-        categories.forEach(cat => categoryTotals[cat] = 0);
+        categories.forEach(cat => {
+            cardExpenses.neo[cat] = 0;
+            cardExpenses.rbc[cat] = 0;
+        });
+        
+        let totalSpent = 0;
+        let cardTotalSpent = { neo: 0, rbc: 0 };
         
         snapshot.forEach(doc => {
             const data = doc.data();
-            if (categoryTotals.hasOwnProperty(data.category)) {
-                categoryTotals[data.category] += data.amount;
-                totalSpent += data.amount;
+            const card = data.card;
+            const category = data.category;
+            const amount = data.amount;
+            
+            if (cardExpenses[card] && cardExpenses[card].hasOwnProperty(category)) {
+                cardExpenses[card][category] += amount;
+                cardTotalSpent[card] += amount;
+                totalSpent += amount;
             }
         });
         
-        monthlyExpenses = categoryTotals;
+        monthlyExpenses = cardExpenses;
+        
+        // Calculate budgets and display based on current view
+        let displayBudget = {};
+        let displayExpenses = {};
+        let viewTitle = '';
+        
+        if (currentDashboardView === 'combined') {
+            // Combine both cards
+            categories.forEach(cat => {
+                displayBudget[cat] = (userBudget.neo[cat] || 0) + (userBudget.rbc[cat] || 0);
+                displayExpenses[cat] = cardExpenses.neo[cat] + cardExpenses.rbc[cat];
+            });
+            viewTitle = 'Combined Monthly Status';
+        } else {
+            // Show specific card
+            const card = currentDashboardView;
+            displayBudget = { ...userBudget[card] };
+            displayExpenses = { ...cardExpenses[card] };
+            totalSpent = cardTotalSpent[card];
+            viewTitle = `${card.toUpperCase()} Card Monthly Status`;
+        }
         
         // Update summary stats
-        const totalBudget = Object.values(userBudget).reduce((sum, val) => sum + val, 0);
+        const totalBudget = Object.values(displayBudget).reduce((sum, val) => sum + val, 0);
         const totalRemaining = totalBudget - totalSpent;
         const percentUsed = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
         
+        document.getElementById('summaryTitle').textContent = viewTitle;
         document.getElementById('totalSpent').textContent = `$${totalSpent.toFixed(2)}`;
         document.getElementById('totalBudget').textContent = `$${totalBudget.toFixed(2)}`;
         document.getElementById('totalRemaining').textContent = `$${totalRemaining.toFixed(2)}`;
@@ -789,23 +887,23 @@ async function loadDashboard() {
         document.getElementById('dailyAverage').textContent = `$${dailyAverage.toFixed(2)}/day average`;
         
         // Render category cards
-        renderCategoryCards(categoryTotals);
+        renderCategoryCards(displayExpenses, displayBudget);
         
         // Generate alerts
-        generateBudgetAlerts(categoryTotals, totalSpent, totalBudget, percentUsed);
+        generateBudgetAlerts(cardExpenses, totalSpent, totalBudget, percentUsed);
         
     } catch (error) {
         console.error('Error loading dashboard:', error);
     }
 }
 
-function renderCategoryCards(categoryTotals) {
+function renderCategoryCards(categoryTotals, budgetTotals) {
     const container = document.getElementById('budgetCategories');
     container.innerHTML = '';
     
     categories.forEach(category => {
         const spent = categoryTotals[category] || 0;
-        const budget = userBudget[category] || 0;
+        const budget = budgetTotals[category] || 0;
         const remaining = budget - spent;
         const percentUsed = budget > 0 ? (spent / budget) * 100 : 0;
         
@@ -842,16 +940,17 @@ function renderCategoryCards(categoryTotals) {
     });
 }
 
-async function checkBudgetAfterExpense(category, amount) {
-    if (!userBudget || !userBudget[category]) return;
+async function checkBudgetAfterExpense(card, category, amount) {
+    if (!userBudget || !userBudget[card] || !userBudget[card][category]) return;
     
-    // Get current month's spending for this category
+    // Get current month's spending for this card and category
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     
     try {
         const snapshot = await db.collection('expenses')
             .where('userId', '==', currentUser.uid)
+            .where('card', '==', card)
             .where('category', '==', category)
             .where('timestamp', '>=', startOfMonth)
             .get();
@@ -861,16 +960,16 @@ async function checkBudgetAfterExpense(category, amount) {
             categoryTotal += doc.data().amount;
         });
         
-        const budget = userBudget[category];
-        const percentUsed = (categoryTotal / budget) * 100;
+        const budget = userBudget[card][category];
+        const percentUsed = budget > 0 ? (categoryTotal / budget) * 100 : 0;
         
         // Show alert if budget exceeded or close to limit
         if (percentUsed >= 100) {
-            showBudgetAlert(`You've exceeded your ${category} budget! Spent: $${categoryTotal.toFixed(2)} of $${budget}`, 'danger');
+            showBudgetAlert(`${card.toUpperCase()} Card: You've exceeded your ${category} budget! Spent: $${categoryTotal.toFixed(2)} of $${budget}`, 'danger');
         } else if (percentUsed >= 90) {
-            showBudgetAlert(`Warning: You've used ${percentUsed.toFixed(0)}% of your ${category} budget`, 'warning');
+            showBudgetAlert(`${card.toUpperCase()} Card: Warning! You've used ${percentUsed.toFixed(0)}% of your ${category} budget`, 'warning');
         } else if (percentUsed >= 80) {
-            showBudgetAlert(`Heads up: You've used ${percentUsed.toFixed(0)}% of your ${category} budget`, 'info');
+            showBudgetAlert(`${card.toUpperCase()} Card: You've used ${percentUsed.toFixed(0)}% of your ${category} budget`, 'info');
         }
     } catch (error) {
         console.error('Error checking budget:', error);
@@ -897,7 +996,7 @@ function showBudgetAlert(message, type = 'info') {
     }, 4000);
 }
 
-function generateBudgetAlerts(categoryTotals, totalSpent, totalBudget, percentUsed) {
+function generateBudgetAlerts(cardExpenses, totalSpent, totalBudget, percentUsed) {
     const alertsContainer = document.getElementById('budgetAlerts');
     const alerts = [];
     
@@ -916,19 +1015,21 @@ function generateBudgetAlerts(categoryTotals, totalSpent, totalBudget, percentUs
         });
     }
     
-    // Category-specific alerts
-    categories.forEach(category => {
-        const spent = categoryTotals[category] || 0;
-        const budget = userBudget[category] || 0;
-        const percentUsed = budget > 0 ? (spent / budget) * 100 : 0;
-        
-        if (budget > 0 && percentUsed >= 100) {
-            alerts.push({
-                type: 'danger',
-                icon: '📊',
-                message: `${category.charAt(0).toUpperCase() + category.slice(1)} budget exceeded!`
-            });
-        }
+    // Card and category-specific alerts
+    ['neo', 'rbc'].forEach(card => {
+        categories.forEach(category => {
+            const spent = cardExpenses[card][category] || 0;
+            const budget = userBudget[card][category] || 0;
+            const percentUsed = budget > 0 ? (spent / budget) * 100 : 0;
+            
+            if (budget > 0 && percentUsed >= 100) {
+                alerts.push({
+                    type: 'danger',
+                    icon: '📊',
+                    message: `${card.toUpperCase()} Card: ${category.charAt(0).toUpperCase() + category.slice(1)} budget exceeded!`
+                });
+            }
+        });
     });
     
     // Spending insights

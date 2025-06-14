@@ -1032,6 +1032,36 @@ body {
     background: var(--primary-hover);
 }
 
+/* Card View Tabs */
+.card-view-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 24px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--border);
+}
+
+.card-view-tab {
+    flex: 1;
+    padding: 10px 16px;
+    background: var(--background);
+    color: var(--text-secondary);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.card-view-tab.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+.card-view-tab:hover:not(.active) {
+    background: var(--surface);
+}
+
 /* Month Summary */
 .month-summary {
     margin-bottom: 24px;
@@ -1231,10 +1261,68 @@ body {
 }
 
 /* Budget Modal Styles */
+.modal-wide {
+    max-width: 600px;
+}
+
 .modal-subtitle {
     color: var(--text-secondary);
     margin-bottom: 20px;
     font-size: 14px;
+}
+
+.card-budget-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 24px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--border);
+}
+
+.budget-tab {
+    flex: 1;
+    padding: 12px 16px;
+    background: var(--background);
+    color: var(--text-secondary);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.budget-tab.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+.budget-tab:hover:not(.active) {
+    background: var(--surface);
+}
+
+.card-budget-section {
+    display: none;
+}
+
+.card-budget-section.active {
+    display: block;
+}
+
+.card-budget-section h3 {
+    font-size: 18px;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+}
+
+.budget-subtotal {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--background);
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-weight: 600;
+    border: 2px solid var(--border);
 }
 
 .budget-inputs {

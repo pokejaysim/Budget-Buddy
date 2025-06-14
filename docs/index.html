@@ -74,9 +74,15 @@
                     <button id="manageBudgetBtn" class="manage-budget-btn">⚙️ Manage Budget</button>
                 </div>
                 
+                <div class="card-view-tabs">
+                    <button class="card-view-tab active" data-view="combined">Combined</button>
+                    <button class="card-view-tab" data-view="neo">Neo Card</button>
+                    <button class="card-view-tab" data-view="rbc">RBC Card</button>
+                </div>
+                
                 <div class="month-summary">
                     <div class="summary-card">
-                        <h3>Monthly Status</h3>
+                        <h3 id="summaryTitle">Monthly Status</h3>
                         <div class="summary-stats">
                             <div class="stat-item">
                                 <span class="stat-label">Spent</span>
@@ -213,56 +219,124 @@
 
     <!-- Budget Management Modal -->
     <div id="budgetModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content modal-wide">
             <h2>Manage Monthly Budget</h2>
-            <p class="modal-subtitle">Set your budget for each category</p>
+            <p class="modal-subtitle">Set your budget for each card and category</p>
+            
+            <div class="card-budget-tabs">
+                <button type="button" class="budget-tab active" data-card="neo">Neo Card</button>
+                <button type="button" class="budget-tab" data-card="rbc">RBC Card</button>
+            </div>
+            
             <form id="budgetForm">
-                <div class="budget-inputs">
-                    <div class="budget-input-group">
-                        <label>
-                            <span class="category-icon">🍔</span>
-                            Food
-                        </label>
-                        <input type="number" id="budgetFood" class="budget-input" placeholder="0" step="1" min="0">
+                <!-- Neo Card Budget -->
+                <div class="card-budget-section active" data-card="neo">
+                    <h3>Neo Card Budget</h3>
+                    <div class="budget-inputs">
+                        <div class="budget-input-group">
+                            <label>
+                                <span class="category-icon">🍔</span>
+                                Food
+                            </label>
+                            <input type="number" id="budgetNeoFood" class="budget-input" data-card="neo" data-category="food" placeholder="0" step="1" min="0">
+                        </div>
+                        <div class="budget-input-group">
+                            <label>
+                                <span class="category-icon">🚚</span>
+                                Delivery
+                            </label>
+                            <input type="number" id="budgetNeoDelivery" class="budget-input" data-card="neo" data-category="delivery" placeholder="0" step="1" min="0">
+                        </div>
+                        <div class="budget-input-group">
+                            <label>
+                                <span class="category-icon">🛒</span>
+                                Groceries
+                            </label>
+                            <input type="number" id="budgetNeoGroceries" class="budget-input" data-card="neo" data-category="groceries" placeholder="0" step="1" min="0">
+                        </div>
+                        <div class="budget-input-group">
+                            <label>
+                                <span class="category-icon">🛍️</span>
+                                Shopping
+                            </label>
+                            <input type="number" id="budgetNeoShopping" class="budget-input" data-card="neo" data-category="shopping" placeholder="0" step="1" min="0">
+                        </div>
+                        <div class="budget-input-group">
+                            <label>
+                                <span class="category-icon">🎬</span>
+                                Entertainment
+                            </label>
+                            <input type="number" id="budgetNeoEntertainment" class="budget-input" data-card="neo" data-category="entertainment" placeholder="0" step="1" min="0">
+                        </div>
+                        <div class="budget-input-group">
+                            <label>
+                                <span class="category-icon">📦</span>
+                                Other
+                            </label>
+                            <input type="number" id="budgetNeoOther" class="budget-input" data-card="neo" data-category="other" placeholder="0" step="1" min="0">
+                        </div>
                     </div>
-                    <div class="budget-input-group">
-                        <label>
-                            <span class="category-icon">🚚</span>
-                            Delivery
-                        </label>
-                        <input type="number" id="budgetDelivery" class="budget-input" placeholder="0" step="1" min="0">
-                    </div>
-                    <div class="budget-input-group">
-                        <label>
-                            <span class="category-icon">🛒</span>
-                            Groceries
-                        </label>
-                        <input type="number" id="budgetGroceries" class="budget-input" placeholder="0" step="1" min="0">
-                    </div>
-                    <div class="budget-input-group">
-                        <label>
-                            <span class="category-icon">🛍️</span>
-                            Shopping
-                        </label>
-                        <input type="number" id="budgetShopping" class="budget-input" placeholder="0" step="1" min="0">
-                    </div>
-                    <div class="budget-input-group">
-                        <label>
-                            <span class="category-icon">🎬</span>
-                            Entertainment
-                        </label>
-                        <input type="number" id="budgetEntertainment" class="budget-input" placeholder="0" step="1" min="0">
-                    </div>
-                    <div class="budget-input-group">
-                        <label>
-                            <span class="category-icon">📦</span>
-                            Other
-                        </label>
-                        <input type="number" id="budgetOther" class="budget-input" placeholder="0" step="1" min="0">
+                    <div class="budget-subtotal">
+                        <span>Neo Card Total:</span>
+                        <span id="budgetNeoTotal">$0</span>
                     </div>
                 </div>
+                
+                <!-- RBC Card Budget -->
+                <div class="card-budget-section" data-card="rbc">
+                    <h3>RBC Card Budget</h3>
+                    <div class="budget-inputs">
+                        <div class="budget-input-group">
+                            <label>
+                                <span class="category-icon">🍔</span>
+                                Food
+                            </label>
+                            <input type="number" id="budgetRbcFood" class="budget-input" data-card="rbc" data-category="food" placeholder="0" step="1" min="0">
+                        </div>
+                        <div class="budget-input-group">
+                            <label>
+                                <span class="category-icon">🚚</span>
+                                Delivery
+                            </label>
+                            <input type="number" id="budgetRbcDelivery" class="budget-input" data-card="rbc" data-category="delivery" placeholder="0" step="1" min="0">
+                        </div>
+                        <div class="budget-input-group">
+                            <label>
+                                <span class="category-icon">🛒</span>
+                                Groceries
+                            </label>
+                            <input type="number" id="budgetRbcGroceries" class="budget-input" data-card="rbc" data-category="groceries" placeholder="0" step="1" min="0">
+                        </div>
+                        <div class="budget-input-group">
+                            <label>
+                                <span class="category-icon">🛍️</span>
+                                Shopping
+                            </label>
+                            <input type="number" id="budgetRbcShopping" class="budget-input" data-card="rbc" data-category="shopping" placeholder="0" step="1" min="0">
+                        </div>
+                        <div class="budget-input-group">
+                            <label>
+                                <span class="category-icon">🎬</span>
+                                Entertainment
+                            </label>
+                            <input type="number" id="budgetRbcEntertainment" class="budget-input" data-card="rbc" data-category="entertainment" placeholder="0" step="1" min="0">
+                        </div>
+                        <div class="budget-input-group">
+                            <label>
+                                <span class="category-icon">📦</span>
+                                Other
+                            </label>
+                            <input type="number" id="budgetRbcOther" class="budget-input" data-card="rbc" data-category="other" placeholder="0" step="1" min="0">
+                        </div>
+                    </div>
+                    <div class="budget-subtotal">
+                        <span>RBC Card Total:</span>
+                        <span id="budgetRbcTotal">$0</span>
+                    </div>
+                </div>
+                
                 <div class="budget-total">
-                    <span>Total Budget:</span>
+                    <span>Total Monthly Budget:</span>
                     <span id="budgetTotalPreview">$0</span>
                 </div>
                 <div class="modal-actions">
