@@ -35,6 +35,10 @@
 
         <!-- Navigation -->
         <nav class="bottom-nav">
+            <button class="nav-btn" data-view="dashboard">
+                <span class="nav-icon">🏠</span>
+                <span>Dashboard</span>
+            </button>
             <button class="nav-btn active" data-view="entry">
                 <span class="nav-icon">+</span>
                 <span>Add</span>
@@ -49,8 +53,8 @@
             </button>
         </nav>
 
-        <!-- Quick Stats -->
-        <div class="quick-stats">
+        <!-- Quick Stats (Hidden when dashboard is active) -->
+        <div class="quick-stats" id="quickStats">
             <div class="stat-card">
                 <h3>Neo Card</h3>
                 <p class="stat-amount" id="neoTotal">$0.00</p>
@@ -63,6 +67,59 @@
 
         <!-- Views Container -->
         <div class="views-container">
+            <!-- Dashboard View -->
+            <div id="dashboardView" class="view">
+                <div class="dashboard-header">
+                    <h2>Budget Overview</h2>
+                    <button id="manageBudgetBtn" class="manage-budget-btn">⚙️ Manage Budget</button>
+                </div>
+                
+                <div class="month-summary">
+                    <div class="summary-card">
+                        <h3>Monthly Status</h3>
+                        <div class="summary-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Spent</span>
+                                <span class="stat-value" id="totalSpent">$0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Budget</span>
+                                <span class="stat-value" id="totalBudget">$0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Remaining</span>
+                                <span class="stat-value" id="totalRemaining">$0</span>
+                            </div>
+                        </div>
+                        <div class="overall-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="overallProgress" style="width: 0%"></div>
+                            </div>
+                            <span class="progress-text" id="overallProgressText">0% of budget used</span>
+                        </div>
+                    </div>
+                    
+                    <div class="summary-insights">
+                        <div class="insight-item">
+                            <span class="insight-icon">📅</span>
+                            <span id="daysRemaining">30 days remaining</span>
+                        </div>
+                        <div class="insight-item">
+                            <span class="insight-icon">💰</span>
+                            <span id="dailyAverage">$0/day average</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="budget-categories" id="budgetCategories">
+                    <!-- Category budget cards will be dynamically inserted here -->
+                </div>
+                
+                <div class="budget-alerts" id="budgetAlerts" style="display: none;">
+                    <!-- Alert messages will be dynamically inserted here -->
+                </div>
+            </div>
+            
             <!-- Entry View -->
             <div id="entryView" class="view active">
                 <form id="expenseForm" class="expense-form">
@@ -151,6 +208,68 @@
                 <div id="categoryBreakdown" class="category-breakdown"></div>
                 <button id="exportBtn" class="export-btn">Export to CSV</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Budget Management Modal -->
+    <div id="budgetModal" class="modal">
+        <div class="modal-content">
+            <h2>Manage Monthly Budget</h2>
+            <p class="modal-subtitle">Set your budget for each category</p>
+            <form id="budgetForm">
+                <div class="budget-inputs">
+                    <div class="budget-input-group">
+                        <label>
+                            <span class="category-icon">🍔</span>
+                            Food
+                        </label>
+                        <input type="number" id="budgetFood" class="budget-input" placeholder="0" step="1" min="0">
+                    </div>
+                    <div class="budget-input-group">
+                        <label>
+                            <span class="category-icon">🚚</span>
+                            Delivery
+                        </label>
+                        <input type="number" id="budgetDelivery" class="budget-input" placeholder="0" step="1" min="0">
+                    </div>
+                    <div class="budget-input-group">
+                        <label>
+                            <span class="category-icon">🛒</span>
+                            Groceries
+                        </label>
+                        <input type="number" id="budgetGroceries" class="budget-input" placeholder="0" step="1" min="0">
+                    </div>
+                    <div class="budget-input-group">
+                        <label>
+                            <span class="category-icon">🛍️</span>
+                            Shopping
+                        </label>
+                        <input type="number" id="budgetShopping" class="budget-input" placeholder="0" step="1" min="0">
+                    </div>
+                    <div class="budget-input-group">
+                        <label>
+                            <span class="category-icon">🎬</span>
+                            Entertainment
+                        </label>
+                        <input type="number" id="budgetEntertainment" class="budget-input" placeholder="0" step="1" min="0">
+                    </div>
+                    <div class="budget-input-group">
+                        <label>
+                            <span class="category-icon">📦</span>
+                            Other
+                        </label>
+                        <input type="number" id="budgetOther" class="budget-input" placeholder="0" step="1" min="0">
+                    </div>
+                </div>
+                <div class="budget-total">
+                    <span>Total Budget:</span>
+                    <span id="budgetTotalPreview">$0</span>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeBudgetModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Budget</button>
+                </div>
+            </form>
         </div>
     </div>
 
