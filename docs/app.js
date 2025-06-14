@@ -671,39 +671,119 @@ const budgetModal = document.getElementById('budgetModal');
 const budgetForm = document.getElementById('budgetForm');
 const manageBudgetBtn = document.getElementById('manageBudgetBtn');
 let currentBudgetCard = 'neo';
+let budgetModes = { neo: 'total', rbc: 'total' };
 
 manageBudgetBtn.addEventListener('click', showBudgetModal);
 
-// Budget tab functionality
-document.querySelectorAll('.budget-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        const card = tab.dataset.card;
-        
-        // Update active tab
-        document.querySelectorAll('.budget-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        
-        // Show corresponding budget section
-        document.querySelectorAll('.card-budget-section').forEach(section => {
-            section.classList.remove('active');
-        });
-        document.querySelector(`[data-card="${card}"]`).classList.add('active');
-        
-        currentBudgetCard = card;
-        updateBudgetTotal();
-    });
+// Initialize budget modal after DOM loads
+document.addEventListener('DOMContentLoaded', () => {
+    initializeBudgetModal();
 });
 
-function showBudgetModal() {
-    // Populate current budget values for both cards
-    if (userBudget) {
-        ['neo', 'rbc'].forEach(card => {
-            categories.forEach(category => {
-                const input = document.getElementById(`budget${card.charAt(0).toUpperCase() + card.slice(1)}${category.charAt(0).toUpperCase() + category.slice(1)}`);
-                if (input && userBudget[card]) {
-                    input.value = userBudget[card][category] || 0;
+function initializeBudgetModal() {
+    // Budget tab functionality
+    document.querySelectorAll('.budget-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const card = tab.dataset.card;
+            
+            // Update active tab
+            document.querySelectorAll('.budget-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            // Show corresponding budget section
+            document.querySelectorAll('.card-budget-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.querySelector(`.card-budget-section[data-card="${card}"]`).classList.add('active');
+            
+            currentBudgetCard = card;
+            updateBudgetTotal();
+        });
+    });
+
+    // Budget mode toggles
+    ['neo', 'rbc'].forEach(card => {
+        const modeInputs = document.querySelectorAll(`input[name="${card}BudgetMode"]`);
+        modeInputs.forEach(input => {
+            input.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    budgetModes[card] = e.target.value;
+                    toggleBudgetMode(card, e.target.value);
+                    updateBudgetTotal();
                 }
             });
+        });
+    });
+
+    // Add input listeners for all budget inputs
+    setupBudgetInputListeners();
+}
+
+function toggleBudgetMode(card, mode) {
+    const totalSection = document.querySelector(`.total-budget-section[data-card="${card}"]`);
+    const individualSection = document.querySelector(`.individual-budget-section[data-card="${card}"]`);
+    
+    if (mode === 'total') {
+        totalSection.style.display = 'block';
+        individualSection.style.display = 'none';
+    } else {
+        totalSection.style.display = 'none';
+        individualSection.style.display = 'block';
+    }
+}
+
+function setupBudgetInputListeners() {
+    // Total budget inputs
+    ['neo', 'rbc'].forEach(card => {
+        const totalInput = document.getElementById(`budget${card.charAt(0).toUpperCase() + card.slice(1)}Total`);
+        if (totalInput) {
+            totalInput.addEventListener('input', updateBudgetTotal);
+        }
+        
+        // Individual category inputs
+        categories.forEach(category => {
+            const input = document.getElementById(`budget${card.charAt(0).toUpperCase() + card.slice(1)}${category.charAt(0).toUpperCase() + category.slice(1)}`);
+            if (input) {
+                input.addEventListener('input', () => {
+                    updateCategorySubtotal(card);
+                    updateBudgetTotal();
+                });
+            }
+        });
+    });
+}
+
+function showBudgetModal() {
+    // Populate current budget values
+    if (userBudget) {
+        ['neo', 'rbc'].forEach(card => {
+            // Check if we have stored budget mode or data structure
+            const cardBudget = userBudget[card];
+            if (cardBudget) {
+                // Check if it's total mode (single number) or individual mode (object)
+                if (typeof cardBudget === 'number' || (cardBudget.total !== undefined)) {
+                    // Total budget mode
+                    budgetModes[card] = 'total';
+                    const totalInput = document.getElementById(`budget${card.charAt(0).toUpperCase() + card.slice(1)}Total`);
+                    if (totalInput) {
+                        totalInput.value = cardBudget.total || cardBudget || 0;
+                    }
+                    document.querySelector(`input[name="${card}BudgetMode"][value="total"]`).checked = true;
+                    toggleBudgetMode(card, 'total');
+                } else {
+                    // Individual category mode
+                    budgetModes[card] = 'individual';
+                    categories.forEach(category => {
+                        const input = document.getElementById(`budget${card.charAt(0).toUpperCase() + card.slice(1)}${category.charAt(0).toUpperCase() + category.slice(1)}`);
+                        if (input) {
+                            input.value = cardBudget[category] || 0;
+                        }
+                    });
+                    document.querySelector(`input[name="${card}BudgetMode"][value="individual"]`).checked = true;
+                    toggleBudgetMode(card, 'individual');
+                    updateCategorySubtotal(card);
+                }
+            }
         });
         updateBudgetTotal();
     }
@@ -714,31 +794,48 @@ function closeBudgetModal() {
     budgetModal.classList.remove('active');
 }
 
-// Update total preview as user types
-['neo', 'rbc'].forEach(card => {
+function updateCategorySubtotal(card) {
+    let total = 0;
     categories.forEach(category => {
         const input = document.getElementById(`budget${card.charAt(0).toUpperCase() + card.slice(1)}${category.charAt(0).toUpperCase() + category.slice(1)}`);
         if (input) {
-            input.addEventListener('input', updateBudgetTotal);
+            total += parseFloat(input.value) || 0;
         }
     });
-});
+    
+    const subtotalElement = document.getElementById(`budget${card.charAt(0).toUpperCase() + card.slice(1)}Subtotal`);
+    if (subtotalElement) {
+        subtotalElement.textContent = `$${total}`;
+    }
+}
 
 function updateBudgetTotal() {
-    let neoTotal = 0;
-    let rbcTotal = 0;
+    let grandTotal = 0;
     
-    categories.forEach(category => {
-        const neoInput = document.getElementById(`budgetNeo${category.charAt(0).toUpperCase() + category.slice(1)}`);
-        const rbcInput = document.getElementById(`budgetRbc${category.charAt(0).toUpperCase() + category.slice(1)}`);
+    ['neo', 'rbc'].forEach(card => {
+        let cardTotal = 0;
         
-        if (neoInput) neoTotal += parseFloat(neoInput.value) || 0;
-        if (rbcInput) rbcTotal += parseFloat(rbcInput.value) || 0;
+        if (budgetModes[card] === 'total') {
+            const totalInput = document.getElementById(`budget${card.charAt(0).toUpperCase() + card.slice(1)}Total`);
+            if (totalInput) {
+                cardTotal = parseFloat(totalInput.value) || 0;
+            }
+        } else {
+            categories.forEach(category => {
+                const input = document.getElementById(`budget${card.charAt(0).toUpperCase() + card.slice(1)}${category.charAt(0).toUpperCase() + category.slice(1)}`);
+                if (input) {
+                    cardTotal += parseFloat(input.value) || 0;
+                }
+            });
+        }
+        
+        grandTotal += cardTotal;
     });
     
-    document.getElementById('budgetNeoTotal').textContent = `$${neoTotal}`;
-    document.getElementById('budgetRbcTotal').textContent = `$${rbcTotal}`;
-    document.getElementById('budgetTotalPreview').textContent = `$${neoTotal + rbcTotal}`;
+    const totalPreview = document.getElementById('budgetTotalPreview');
+    if (totalPreview) {
+        totalPreview.textContent = `$${grandTotal}`;
+    }
 }
 
 budgetForm.addEventListener('submit', async (e) => {
@@ -750,10 +847,21 @@ budgetForm.addEventListener('submit', async (e) => {
     };
     
     ['neo', 'rbc'].forEach(card => {
-        categories.forEach(category => {
-            const input = document.getElementById(`budget${card.charAt(0).toUpperCase() + card.slice(1)}${category.charAt(0).toUpperCase() + category.slice(1)}`);
-            newBudget[card][category] = parseFloat(input.value) || 0;
-        });
+        if (budgetModes[card] === 'total') {
+            const totalInput = document.getElementById(`budget${card.charAt(0).toUpperCase() + card.slice(1)}Total`);
+            newBudget[card] = {
+                mode: 'total',
+                total: parseFloat(totalInput.value) || 0
+            };
+        } else {
+            newBudget[card] = {
+                mode: 'individual'
+            };
+            categories.forEach(category => {
+                const input = document.getElementById(`budget${card.charAt(0).toUpperCase() + card.slice(1)}${category.charAt(0).toUpperCase() + category.slice(1)}`);
+                newBudget[card][category] = parseFloat(input.value) || 0;
+            });
+        }
     });
     
     try {
@@ -840,25 +948,59 @@ async function loadDashboard() {
         let displayBudget = {};
         let displayExpenses = {};
         let viewTitle = '';
+        let totalBudget = 0;
         
         if (currentDashboardView === 'combined') {
             // Combine both cards
             categories.forEach(cat => {
-                displayBudget[cat] = (userBudget.neo[cat] || 0) + (userBudget.rbc[cat] || 0);
+                let neoBudget = 0;
+                let rbcBudget = 0;
+                
+                // Handle different budget modes
+                if (userBudget.neo.mode === 'total') {
+                    // For total mode, we'll show the category breakdown but budget will be the total
+                    neoBudget = userBudget.neo.total || 0;
+                } else {
+                    neoBudget = userBudget.neo[cat] || 0;
+                }
+                
+                if (userBudget.rbc.mode === 'total') {
+                    rbcBudget = userBudget.rbc.total || 0;
+                } else {
+                    rbcBudget = userBudget.rbc[cat] || 0;
+                }
+                
+                displayBudget[cat] = neoBudget + rbcBudget;
                 displayExpenses[cat] = cardExpenses.neo[cat] + cardExpenses.rbc[cat];
             });
+            
+            // Calculate total budget for combined view
+            totalBudget = (userBudget.neo.mode === 'total' ? userBudget.neo.total : Object.values(userBudget.neo).filter(v => typeof v === 'number').reduce((sum, val) => sum + val, 0)) +
+                         (userBudget.rbc.mode === 'total' ? userBudget.rbc.total : Object.values(userBudget.rbc).filter(v => typeof v === 'number').reduce((sum, val) => sum + val, 0));
+            
             viewTitle = 'Combined Monthly Status';
         } else {
             // Show specific card
             const card = currentDashboardView;
-            displayBudget = { ...userBudget[card] };
+            const cardBudget = userBudget[card];
             displayExpenses = { ...cardExpenses[card] };
             totalSpent = cardTotalSpent[card];
             viewTitle = `${card.toUpperCase()} Card Monthly Status`;
+            
+            if (cardBudget.mode === 'total') {
+                // For total mode, show total budget tracked across all categories
+                totalBudget = cardBudget.total || 0;
+                categories.forEach(cat => {
+                    displayBudget[cat] = totalBudget; // This will be handled specially in rendering
+                });
+            } else {
+                // Individual category budgets
+                categories.forEach(cat => {
+                    displayBudget[cat] = cardBudget[cat] || 0;
+                });
+                totalBudget = Object.values(displayBudget).reduce((sum, val) => sum + val, 0);
+            }
         }
-        
-        // Update summary stats
-        const totalBudget = Object.values(displayBudget).reduce((sum, val) => sum + val, 0);
         const totalRemaining = totalBudget - totalSpent;
         const percentUsed = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
         
@@ -887,7 +1029,7 @@ async function loadDashboard() {
         document.getElementById('dailyAverage').textContent = `$${dailyAverage.toFixed(2)}/day average`;
         
         // Render category cards
-        renderCategoryCards(displayExpenses, displayBudget);
+        renderCategoryCards(displayExpenses, displayBudget, currentDashboardView, totalBudget, totalSpent);
         
         // Generate alerts
         generateBudgetAlerts(cardExpenses, totalSpent, totalBudget, percentUsed);
@@ -897,18 +1039,20 @@ async function loadDashboard() {
     }
 }
 
-function renderCategoryCards(categoryTotals, budgetTotals) {
+function renderCategoryCards(categoryTotals, budgetTotals, view, totalBudget, totalSpent) {
     const container = document.getElementById('budgetCategories');
     container.innerHTML = '';
     
-    categories.forEach(category => {
-        const spent = categoryTotals[category] || 0;
-        const budget = budgetTotals[category] || 0;
-        const remaining = budget - spent;
-        const percentUsed = budget > 0 ? (spent / budget) * 100 : 0;
-        
+    // Check if we're in single card view with total budget mode
+    const isSingleCardTotalMode = view !== 'combined' && userBudget[view] && userBudget[view].mode === 'total';
+    
+    if (isSingleCardTotalMode) {
+        // For total budget mode, show one overall card instead of category breakdown
         const card = document.createElement('div');
-        card.className = 'budget-category-card';
+        card.className = 'budget-category-card total-budget-card';
+        
+        const percentUsed = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+        const remaining = totalBudget - totalSpent;
         
         let progressClass = '';
         if (percentUsed >= 90) progressClass = 'danger';
@@ -917,12 +1061,12 @@ function renderCategoryCards(categoryTotals, budgetTotals) {
         card.innerHTML = `
             <div class="category-header">
                 <div class="category-name">
-                    <span>${getCategoryIcon(category)}</span>
-                    <span>${category.charAt(0).toUpperCase() + category.slice(1)}</span>
+                    <span>💳</span>
+                    <span>${view.toUpperCase()} Card Total Budget</span>
                 </div>
                 <div class="category-amount">
-                    <span class="amount-spent">$${spent.toFixed(2)}</span>
-                    <span class="amount-budget">of $${budget}</span>
+                    <span class="amount-spent">$${totalSpent.toFixed(2)}</span>
+                    <span class="amount-budget">of $${totalBudget}</span>
                 </div>
             </div>
             <div class="category-progress">
@@ -937,39 +1081,131 @@ function renderCategoryCards(categoryTotals, budgetTotals) {
         `;
         
         container.appendChild(card);
-    });
+        
+        // Show spending breakdown by category (informational only)
+        const breakdownCard = document.createElement('div');
+        breakdownCard.className = 'spending-breakdown-card';
+        breakdownCard.innerHTML = `
+            <h4>Spending Breakdown</h4>
+            <div class="breakdown-list">
+                ${categories.map(category => {
+                    const spent = categoryTotals[category] || 0;
+                    const percentage = totalSpent > 0 ? (spent / totalSpent) * 100 : 0;
+                    return spent > 0 ? `
+                        <div class="breakdown-item">
+                            <span>${getCategoryIcon(category)} ${category.charAt(0).toUpperCase() + category.slice(1)}</span>
+                            <span>$${spent.toFixed(2)} (${percentage.toFixed(0)}%)</span>
+                        </div>
+                    ` : '';
+                }).filter(item => item).join('')}
+            </div>
+        `;
+        
+        container.appendChild(breakdownCard);
+    } else {
+        // Standard category cards for individual budget mode or combined view
+        categories.forEach(category => {
+            const spent = categoryTotals[category] || 0;
+            const budget = budgetTotals[category] || 0;
+            const remaining = budget - spent;
+            const percentUsed = budget > 0 ? (spent / budget) * 100 : 0;
+            
+            // Skip categories with no budget and no spending
+            if (budget === 0 && spent === 0) return;
+            
+            const card = document.createElement('div');
+            card.className = 'budget-category-card';
+            
+            let progressClass = '';
+            if (percentUsed >= 90) progressClass = 'danger';
+            else if (percentUsed >= 70) progressClass = 'warning';
+            
+            card.innerHTML = `
+                <div class="category-header">
+                    <div class="category-name">
+                        <span>${getCategoryIcon(category)}</span>
+                        <span>${category.charAt(0).toUpperCase() + category.slice(1)}</span>
+                    </div>
+                    <div class="category-amount">
+                        <span class="amount-spent">$${spent.toFixed(2)}</span>
+                        <span class="amount-budget">of $${budget}</span>
+                    </div>
+                </div>
+                <div class="category-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill ${progressClass}" style="width: ${Math.min(percentUsed, 100)}%"></div>
+                    </div>
+                </div>
+                <div class="category-footer">
+                    <span>${percentUsed.toFixed(0)}% used</span>
+                    <span>$${Math.max(remaining, 0).toFixed(2)} left</span>
+                </div>
+            `;
+            
+            container.appendChild(card);
+        });
+    }
 }
 
 async function checkBudgetAfterExpense(card, category, amount) {
-    if (!userBudget || !userBudget[card] || !userBudget[card][category]) return;
+    if (!userBudget || !userBudget[card]) return;
     
-    // Get current month's spending for this card and category
+    const cardBudget = userBudget[card];
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     
     try {
-        const snapshot = await db.collection('expenses')
-            .where('userId', '==', currentUser.uid)
-            .where('card', '==', card)
-            .where('category', '==', category)
-            .where('timestamp', '>=', startOfMonth)
-            .get();
-        
-        let categoryTotal = 0;
-        snapshot.forEach(doc => {
-            categoryTotal += doc.data().amount;
-        });
-        
-        const budget = userBudget[card][category];
-        const percentUsed = budget > 0 ? (categoryTotal / budget) * 100 : 0;
-        
-        // Show alert if budget exceeded or close to limit
-        if (percentUsed >= 100) {
-            showBudgetAlert(`${card.toUpperCase()} Card: You've exceeded your ${category} budget! Spent: $${categoryTotal.toFixed(2)} of $${budget}`, 'danger');
-        } else if (percentUsed >= 90) {
-            showBudgetAlert(`${card.toUpperCase()} Card: Warning! You've used ${percentUsed.toFixed(0)}% of your ${category} budget`, 'warning');
-        } else if (percentUsed >= 80) {
-            showBudgetAlert(`${card.toUpperCase()} Card: You've used ${percentUsed.toFixed(0)}% of your ${category} budget`, 'info');
+        if (cardBudget.mode === 'total') {
+            // Check total card spending against total budget
+            const snapshot = await db.collection('expenses')
+                .where('userId', '==', currentUser.uid)
+                .where('card', '==', card)
+                .where('timestamp', '>=', startOfMonth)
+                .get();
+            
+            let totalSpent = 0;
+            snapshot.forEach(doc => {
+                totalSpent += doc.data().amount;
+            });
+            
+            const totalBudget = cardBudget.total || 0;
+            const percentUsed = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+            
+            // Show alert based on total budget usage
+            if (percentUsed >= 100) {
+                showBudgetAlert(`${card.toUpperCase()} Card: You've exceeded your monthly budget! Spent: $${totalSpent.toFixed(2)} of $${totalBudget}`, 'danger');
+            } else if (percentUsed >= 90) {
+                showBudgetAlert(`${card.toUpperCase()} Card: Warning! You've used ${percentUsed.toFixed(0)}% of your monthly budget`, 'warning');
+            } else if (percentUsed >= 80) {
+                showBudgetAlert(`${card.toUpperCase()} Card: You've used ${percentUsed.toFixed(0)}% of your monthly budget`, 'info');
+            }
+        } else {
+            // Check individual category budget
+            if (!cardBudget[category]) return;
+            
+            const snapshot = await db.collection('expenses')
+                .where('userId', '==', currentUser.uid)
+                .where('card', '==', card)
+                .where('category', '==', category)
+                .where('timestamp', '>=', startOfMonth)
+                .get();
+            
+            let categoryTotal = 0;
+            snapshot.forEach(doc => {
+                categoryTotal += doc.data().amount;
+            });
+            
+            const budget = cardBudget[category];
+            const percentUsed = budget > 0 ? (categoryTotal / budget) * 100 : 0;
+            
+            // Show alert if budget exceeded or close to limit
+            if (percentUsed >= 100) {
+                showBudgetAlert(`${card.toUpperCase()} Card: You've exceeded your ${category} budget! Spent: $${categoryTotal.toFixed(2)} of $${budget}`, 'danger');
+            } else if (percentUsed >= 90) {
+                showBudgetAlert(`${card.toUpperCase()} Card: Warning! You've used ${percentUsed.toFixed(0)}% of your ${category} budget`, 'warning');
+            } else if (percentUsed >= 80) {
+                showBudgetAlert(`${card.toUpperCase()} Card: You've used ${percentUsed.toFixed(0)}% of your ${category} budget`, 'info');
+            }
         }
     } catch (error) {
         console.error('Error checking budget:', error);
