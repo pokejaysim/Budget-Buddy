@@ -4,6 +4,11 @@ let selectedCard = 'rbc';
 let selectedCategory = null;
 let expenses = [];
 
+// Platform detection
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
 // DOM Elements
 const loginScreen = document.getElementById('loginScreen');
 const mainApp = document.getElementById('mainApp');
@@ -134,7 +139,7 @@ expenseForm.addEventListener('submit', async (e) => {
         loadUserData();
     } catch (error) {
         console.error('Error saving expense:', error);
-        alert('Failed to save expense. Please try again.');
+        alert(`Failed to save expense: ${error.message}`);
     }
 });
 
@@ -266,26 +271,49 @@ async function loadSummary() {
     
     // Calculate date range
     const now = new Date();
-    let startDate;
+    let startDate, endDate = now;
+    let filterText = '';
     
     switch (period) {
         case 'week':
             startDate = new Date(now);
             startDate.setDate(now.getDate() - 7);
+            filterText = 'Last 7 days';
             break;
         case 'month':
             startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            filterText = `${now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
+            break;
+        case 'lastMonth':
+            startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+            filterText = `${startDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
             break;
         case 'year':
             startDate = new Date(now.getFullYear(), 0, 1);
+            filterText = `Year ${now.getFullYear()}`;
+            break;
+        case 'custom':
+            startDate = new Date(startDateInput.value);
+            endDate = new Date(endDateInput.value);
+            endDate.setHours(23, 59, 59, 999);
+            filterText = `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
             break;
     }
     
+    // Update filter info
+    filterInfo.textContent = filterText;
+    
     try {
-        const snapshot = await db.collection('expenses')
+        let query = db.collection('expenses')
             .where('userId', '==', currentUser.uid)
-            .where('timestamp', '>=', startDate)
-            .get();
+            .where('timestamp', '>=', startDate);
+        
+        if (period === 'lastMonth' || period === 'custom') {
+            query = query.where('timestamp', '<=', endDate);
+        }
+        
+        const snapshot = await query.get();
         
         // Calculate category totals
         const categoryTotals = {};
@@ -331,12 +359,34 @@ async function loadSummary() {
 }
 
 // Period selection
+const dateFilterRow = document.getElementById('dateFilterRow');
+const startDateInput = document.getElementById('startDate');
+const endDateInput = document.getElementById('endDate');
+const applyDateFilterBtn = document.getElementById('applyDateFilter');
+const filterInfo = document.getElementById('filterInfo');
+
 document.querySelectorAll('.period-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        loadSummary();
+        
+        if (btn.dataset.period === 'custom') {
+            dateFilterRow.style.display = 'flex';
+            // Set default dates
+            const now = new Date();
+            const lastMonth = new Date(now);
+            lastMonth.setMonth(now.getMonth() - 1);
+            startDateInput.value = lastMonth.toISOString().split('T')[0];
+            endDateInput.value = now.toISOString().split('T')[0];
+        } else {
+            dateFilterRow.style.display = 'none';
+            loadSummary();
+        }
     });
+});
+
+applyDateFilterBtn.addEventListener('click', () => {
+    loadSummary();
 });
 
 // Edit Expense
@@ -474,8 +524,71 @@ installBtn.addEventListener('click', async () => {
 // Service Worker Registration
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.register('./sw.js')
             .then(registration => console.log('SW registered:', registration))
             .catch(error => console.log('SW registration failed:', error));
     });
 }
+
+// Platform-specific optimizations
+document.addEventListener('DOMContentLoaded', () => {
+    // Add platform class to body
+    if (isMobile) {
+        document.body.classList.add('mobile');
+    } else {
+        document.body.classList.add('desktop');
+    }
+    
+    if (isIOS) {
+        document.body.classList.add('ios');
+    }
+    
+    if (isTouchDevice) {
+        document.body.classList.add('touch');
+    }
+    
+    // Prevent iOS bounce scrolling
+    if (isIOS) {
+        document.addEventListener('touchmove', function(e) {
+            if (e.target.closest('.modal-content') || e.target.closest('.expenses-list')) {
+                return; // Allow scrolling in these areas
+            }
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    }
+    
+    // Optimize input focus on mobile
+    if (isMobile) {
+        const amountInput = document.getElementById('amountInput');
+        amountInput.addEventListener('focus', () => {
+            setTimeout(() => {
+                window.scrollTo(0, amountInput.offsetTop - 100);
+            }, 300);
+        });
+    }
+    
+    // Add keyboard shortcuts for desktop
+    if (!isMobile) {
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + 1,2,3 for navigation
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case '1':
+                        document.querySelector('[data-view="add"]').click();
+                        e.preventDefault();
+                        break;
+                    case '2':
+                        document.querySelector('[data-view="recent"]').click();
+                        e.preventDefault();
+                        break;
+                    case '3':
+                        document.querySelector('[data-view="summary"]').click();
+                        e.preventDefault();
+                        break;
+                }
+            }
+        });
+    }
+});

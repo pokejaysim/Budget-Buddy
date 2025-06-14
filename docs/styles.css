@@ -447,9 +447,50 @@ body {
 
 /* Summary View */
 .summary-controls {
-    display: flex;
-    gap: 12px;
     margin-bottom: 20px;
+}
+
+.filter-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.date-filter-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.date-input {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.apply-btn {
+    padding: 8px 16px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.apply-btn:hover {
+    background: var(--primary-hover);
+}
+
+.filter-info {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 10px;
 }
 
 .period-btn {
@@ -603,17 +644,320 @@ body {
 }
 
 /* Responsive Design */
-@media (max-width: 480px) {
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    body {
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+    
+    .app-header {
+        padding: 12px 16px;
+    }
+    
     .app-header h1 {
-        font-size: 1.2rem;
+        font-size: 1.3rem;
     }
     
     .user-email {
         display: none;
     }
     
+    .views-container {
+        padding-bottom: 70px; /* Account for bottom nav */
+    }
+    
+    .view {
+        padding: 16px;
+    }
+    
+    /* Quick stats - stack vertically on very small screens */
+    @media (max-width: 380px) {
+        .quick-stats {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* Touch-friendly tap targets */
+    .card-btn,
+    .category-btn,
+    .period-btn {
+        min-height: 48px; /* Google's recommended touch target */
+    }
+    
     .category-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    .category-btn {
+        padding: 12px 4px;
+        font-size: 14px;
+    }
+    
+    /* Mobile-optimized input */
+    .amount-input {
+        font-size: 28px;
+        padding: 16px 16px 16px 45px;
+    }
+    
+    .currency-symbol {
+        font-size: 20px;
+        left: 16px;
+    }
+    
+    /* Filter controls stack on mobile */
+    .filter-controls {
+        flex-direction: column;
+    }
+    
+    .filter-select {
+        flex: 1;
+        width: 100%;
+    }
+    
+    /* Date filter responsive */
+    .date-filter-row {
+        flex-wrap: wrap;
+    }
+    
+    .date-input {
+        flex: 1;
+        min-width: 140px;
+    }
+    
+    /* Summary controls responsive */
+    .filter-row {
+        gap: 8px;
+    }
+    
+    .period-btn {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    
+    /* Modal optimizations */
+    .modal-content {
+        margin: 20px;
+        padding: 20px;
+    }
+    
+    /* Expense items - better mobile layout */
+    .expense-item {
+        padding: 12px;
+    }
+    
+    .expense-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .expense-amount {
+        font-size: 18px;
+    }
+    
+    /* Bottom nav adjustments */
+    .bottom-nav {
+        padding: 6px 0;
+    }
+    
+    .nav-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+    
+    .nav-icon {
+        font-size: 20px;
+    }
+}
+
+/* Tablet optimizations */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .view {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    
+    .category-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .quick-stats {
+        max-width: 600px;
+        margin: 20px auto;
+    }
+}
+
+/* Desktop optimizations */
+@media (min-width: 1025px) {
+    /* Center content with max width */
+    .views-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 20px 100px;
+    }
+    
+    .view {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    /* Enhanced desktop header */
+    .app-header {
+        padding: 20px 40px;
+    }
+    
+    .app-header h1 {
+        font-size: 2rem;
+    }
+    
+    /* Quick stats side by side with more spacing */
+    .quick-stats {
+        max-width: 600px;
+        margin: 30px auto;
+        gap: 24px;
+    }
+    
+    .stat-card {
+        padding: 30px;
+    }
+    
+    .stat-amount {
+        font-size: 32px;
+    }
+    
+    /* Desktop expense form */
+    .expense-form {
+        padding: 32px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    /* 4-column category grid on desktop */
+    .category-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+    }
+    
+    /* Larger touch targets with hover effects */
+    .card-btn:hover,
+    .category-btn:hover,
+    .period-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    /* Enhanced bottom navigation */
+    .bottom-nav {
+        padding: 12px 0;
+        max-width: 600px;
+        margin: 0 auto;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: var(--radius) var(--radius) 0 0;
+    }
+    
+    .nav-btn {
+        padding: 12px 30px;
+    }
+    
+    .nav-btn:hover {
+        background: var(--background);
+        border-radius: var(--radius);
+    }
+    
+    /* Desktop expense list */
+    .expenses-list {
+        gap: 16px;
+    }
+    
+    .expense-item {
+        padding: 20px 24px;
+    }
+    
+    .expense-item:hover {
+        transform: translateX(4px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+    
+    /* Summary view enhancements */
+    .category-stat {
+        padding: 16px 0;
+    }
+    
+    .category-stat:hover {
+        background: var(--background);
+        margin: 0 -20px;
+        padding: 16px 20px;
+        border-radius: var(--radius);
+    }
+    
+    /* Modal centering */
+    .modal-content {
+        max-width: 500px;
+        padding: 32px;
+    }
+}
+
+/* High DPI screen optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .card-btn,
+    .category-btn,
+    .period-btn,
+    .save-btn {
+        border-width: 1px;
+    }
+}
+
+/* Landscape mobile optimization */
+@media (max-height: 500px) and (orientation: landscape) {
+    .app-header {
+        position: relative;
+        padding: 8px 16px;
+    }
+    
+    .views-container {
+        padding-top: 10px;
+    }
+    
+    .bottom-nav {
+        padding: 4px 0;
+    }
+    
+    .nav-btn {
+        padding: 4px 16px;
+    }
+    
+    .nav-icon {
+        font-size: 18px;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background: #1a1a1a;
+        --surface: #2d2d2d;
+        --text-primary: #e0e0e0;
+        --text-secondary: #a0a0a0;
+        --border: #404040;
+        --shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    
+    .google-signin-btn {
+        background: var(--surface);
+        color: var(--text-primary);
+    }
+    
+    .amount-input,
+    .description-input,
+    .filter-select,
+    .search-input,
+    .form-input,
+    .date-input {
+        background: var(--surface);
+        color: var(--text-primary);
     }
 }
 

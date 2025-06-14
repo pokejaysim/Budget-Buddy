@@ -133,9 +133,20 @@
             <!-- Summary View -->
             <div id="summaryView" class="view">
                 <div class="summary-controls">
-                    <button class="period-btn active" data-period="week">Week</button>
-                    <button class="period-btn" data-period="month">Month</button>
-                    <button class="period-btn" data-period="year">Year</button>
+                    <div class="filter-row">
+                        <button class="period-btn active" data-period="week">This Week</button>
+                        <button class="period-btn" data-period="month">This Month</button>
+                        <button class="period-btn" data-period="lastMonth">Last Month</button>
+                        <button class="period-btn" data-period="year">This Year</button>
+                        <button class="period-btn" data-period="custom">Custom</button>
+                    </div>
+                    <div class="date-filter-row" id="dateFilterRow" style="display: none;">
+                        <input type="date" id="startDate" class="date-input">
+                        <span>to</span>
+                        <input type="date" id="endDate" class="date-input">
+                        <button id="applyDateFilter" class="apply-btn">Apply</button>
+                    </div>
+                    <div class="filter-info" id="filterInfo"></div>
                 </div>
                 <div id="categoryBreakdown" class="category-breakdown"></div>
                 <button id="exportBtn" class="export-btn">Export to CSV</button>
