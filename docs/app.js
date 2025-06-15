@@ -75,6 +75,7 @@ navButtons.forEach(btn => {
         if (targetView === 'dashboard') {
             loadDashboard();
         } else if (targetView === 'recent') {
+            loadUserData(); // Update totals
             loadRecentExpenses();
         } else if (targetView === 'summary') {
             loadSummary();

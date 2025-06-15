@@ -91,6 +91,11 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
         
         // Reload dashboard
         loadDashboard();
+        
+        // Also update quick stats if visible
+        if (document.getElementById('quickStats').style.display !== 'none') {
+            loadUserData();
+        }
     });
 });
 
@@ -304,5 +309,4 @@ function checkStatementAlerts() {
     });
 }
 
-// Replace original loadUserData with billing-aware version
-window.loadUserData = loadUserDataWithBilling;
+// Note: loadUserData in app.js already handles billing cycles
