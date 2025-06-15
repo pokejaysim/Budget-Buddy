@@ -17,6 +17,12 @@ const categoriesByCard = {
     rbc: ['food', 'delivery', 'groceries', 'shopping', 'entertainment', 'other']
 };
 
+// Categories object for backward compatibility
+const categories = {
+    neo: ['streaming', 'software', 'utilities', 'insurance', 'memberships', 'other-bills'],
+    rbc: ['food', 'delivery', 'groceries', 'shopping', 'entertainment', 'other']
+};
+
 // Subscription templates for Neo card
 const subscriptionTemplates = [
     { name: 'Netflix', amount: 15.99, category: 'streaming' },
