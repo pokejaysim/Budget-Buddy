@@ -919,7 +919,7 @@ function setupBudgetInputListeners() {
         }
         
         // Individual category inputs
-        categories.forEach(category => {
+        categoriesByCard[card].forEach(category => {
             const input = document.getElementById(`budget${card.charAt(0).toUpperCase() + card.slice(1)}${category.charAt(0).toUpperCase() + category.slice(1)}`);
             if (input) {
                 input.addEventListener('input', () => {
@@ -951,7 +951,7 @@ function showBudgetModal() {
                 } else {
                     // Individual category mode
                     budgetModes[card] = 'individual';
-                    categories.forEach(category => {
+                    categoriesByCard[card].forEach(category => {
                         const input = document.getElementById(`budget${card.charAt(0).toUpperCase() + card.slice(1)}${category.charAt(0).toUpperCase() + category.slice(1)}`);
                         if (input) {
                             input.value = cardBudget[category] || 0;
@@ -974,7 +974,7 @@ function closeBudgetModal() {
 
 function updateCategorySubtotal(card) {
     let total = 0;
-    categories.forEach(category => {
+    categoriesByCard[card].forEach(category => {
         const input = document.getElementById(`budget${card.charAt(0).toUpperCase() + card.slice(1)}${category.charAt(0).toUpperCase() + category.slice(1)}`);
         if (input) {
             total += parseFloat(input.value) || 0;
@@ -999,7 +999,7 @@ function updateBudgetTotal() {
                 cardTotal = parseFloat(totalInput.value) || 0;
             }
         } else {
-            categories.forEach(category => {
+            categoriesByCard[card].forEach(category => {
                 const input = document.getElementById(`budget${card.charAt(0).toUpperCase() + card.slice(1)}${category.charAt(0).toUpperCase() + category.slice(1)}`);
                 if (input) {
                     cardTotal += parseFloat(input.value) || 0;
@@ -1035,7 +1035,7 @@ budgetForm.addEventListener('submit', async (e) => {
             newBudget[card] = {
                 mode: 'individual'
             };
-            categories.forEach(category => {
+            categoriesByCard[card].forEach(category => {
                 const input = document.getElementById(`budget${card.charAt(0).toUpperCase() + card.slice(1)}${category.charAt(0).toUpperCase() + category.slice(1)}`);
                 newBudget[card][category] = parseFloat(input.value) || 0;
             });
@@ -1280,7 +1280,8 @@ async function loadDashboard() {
         
         if (currentDashboardView === 'combined') {
             // Combine both cards
-            categories.forEach(cat => {
+            const allCategories = [...new Set([...categoriesByCard.neo, ...categoriesByCard.rbc])];
+            allCategories.forEach(cat => {
                 let neoBudget = 0;
                 let rbcBudget = 0;
                 
@@ -1318,12 +1319,12 @@ async function loadDashboard() {
             if (cardBudget.mode === 'total') {
                 // For total mode, show total budget tracked across all categories
                 totalBudget = cardBudget.total || 0;
-                categories.forEach(cat => {
+                categoriesByCard[card].forEach(cat => {
                     displayBudget[cat] = totalBudget; // This will be handled specially in rendering
                 });
             } else {
                 // Individual category budgets
-                categories.forEach(cat => {
+                categoriesByCard[card].forEach(cat => {
                     displayBudget[cat] = cardBudget[cat] || 0;
                 });
                 totalBudget = Object.values(displayBudget).reduce((sum, val) => sum + val, 0);
@@ -1432,7 +1433,10 @@ function renderCategoryCards(categoryTotals, budgetTotals, view, totalBudget, to
         container.appendChild(breakdownCard);
     } else {
         // Standard category cards for individual budget mode or combined view
-        categories.forEach(category => {
+        const viewCategories = view === 'combined' 
+            ? [...new Set([...categoriesByCard.neo, ...categoriesByCard.rbc])]
+            : categoriesByCard[view] || [];
+        viewCategories.forEach(category => {
             const spent = categoryTotals[category] || 0;
             const budget = budgetTotals[category] || 0;
             const remaining = budget - spent;
@@ -1581,7 +1585,7 @@ function generateBudgetAlerts(cardExpenses, totalSpent, totalBudget, percentUsed
     
     // Card and category-specific alerts
     ['neo', 'rbc'].forEach(card => {
-        categories.forEach(category => {
+        categoriesByCard[card].forEach(category => {
             const spent = cardExpenses[card][category] || 0;
             const budget = userBudget[card][category] || 0;
             const percentUsed = budget > 0 ? (spent / budget) * 100 : 0;

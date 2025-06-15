@@ -114,8 +114,8 @@ async function loadDashboardEnhanced() {
         // Render category budgets
         renderCategoryBudgets(cardExpenses, cardTotalSpent);
         
-        // Display budget alerts
-        displayBudgetAlerts(cardExpenses, cardTotalSpent);
+        // Display budget alerts  
+        generateBudgetAlerts(cardExpenses, Object.values(cardTotalSpent).reduce((sum, val) => sum + val, 0), 0, 0);
         
     } catch (error) {
         console.error('Error loading dashboard:', error);
