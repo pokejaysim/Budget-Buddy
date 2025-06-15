@@ -72,6 +72,8 @@ navButtons.forEach(btn => {
             loadRecentExpenses();
         } else if (targetView === 'summary') {
             loadSummary();
+        } else if (targetView === 'settings') {
+            loadSettings();
         }
     });
 });
@@ -182,12 +184,16 @@ signOutBtn.addEventListener('click', () => {
     auth.signOut();
 });
 
-auth.onAuthStateChanged(user => {
+auth.onAuthStateChanged(async user => {
     currentUser = user;
     if (user) {
         loginScreen.classList.remove('active');
         mainApp.classList.add('active');
         userEmail.textContent = user.email;
+        
+        // Initialize billing cycle settings
+        await billingCycleManager.initializeSettings(user.uid);
+        
         loadUserData();
         loadUserBudget();
         checkFirstTimeUser();

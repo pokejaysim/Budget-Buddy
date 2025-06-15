@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Budget Buddy - Track Your Expenses</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="settings-styles.css">
+    <link rel="stylesheet" href="billing-styles.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a73e8">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -51,6 +53,10 @@
                 <span class="nav-icon">📊</span>
                 <span>Summary</span>
             </button>
+            <button class="nav-btn" data-view="settings">
+                <span class="nav-icon">⚙️</span>
+                <span>Settings</span>
+            </button>
         </nav>
 
         <!-- Quick Stats (Hidden when dashboard is active) -->
@@ -71,7 +77,24 @@
             <div id="dashboardView" class="view">
                 <div class="dashboard-header">
                     <h2>Budget Overview</h2>
-                    <button id="manageBudgetBtn" class="manage-budget-btn">⚙️ Manage Budget</button>
+                    <div class="dashboard-controls">
+                        <div class="view-mode-switch">
+                            <button class="mode-btn active" data-mode="calendar">
+                                <span class="mode-icon">📅</span>
+                                <span>Calendar</span>
+                            </button>
+                            <button class="mode-btn" data-mode="billing">
+                                <span class="mode-icon">💳</span>
+                                <span>Billing</span>
+                            </button>
+                        </div>
+                        <button id="manageBudgetBtn" class="manage-budget-btn">⚙️ Manage Budget</button>
+                    </div>
+                </div>
+                
+                <!-- Period Info Display -->
+                <div class="period-info" id="periodInfo">
+                    <div class="period-details" id="periodDetails"></div>
                 </div>
                 
                 <!-- Enhanced Card Usage Display -->
@@ -289,6 +312,99 @@
                 </div>
                 <div id="categoryBreakdown" class="category-breakdown"></div>
                 <button id="exportBtn" class="export-btn">Export to CSV</button>
+            </div>
+
+            <!-- Settings View -->
+            <div id="settingsView" class="view">
+                <div class="settings-container">
+                    <h2>Settings</h2>
+                    
+                    <!-- View Mode Toggle -->
+                    <div class="settings-section">
+                        <h3>Dashboard View Mode</h3>
+                        <p class="settings-description">Choose how you want to track your budget</p>
+                        <div class="view-mode-toggle">
+                            <label class="toggle-option">
+                                <input type="radio" name="viewMode" value="calendar" id="calendarMode" checked>
+                                <span>Calendar Month</span>
+                            </label>
+                            <label class="toggle-option">
+                                <input type="radio" name="viewMode" value="billing" id="billingMode">
+                                <span>Billing Cycles</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Billing Cycle Configuration -->
+                    <div class="settings-section">
+                        <h3>Credit Card Billing Dates</h3>
+                        <p class="settings-description">Set the statement closing date for each card</p>
+                        
+                        <div class="billing-date-config">
+                            <div class="billing-date-item">
+                                <div class="card-label neo-label">
+                                    <span class="card-icon">💳</span>
+                                    <span>Neo Card</span>
+                                </div>
+                                <div class="date-selector">
+                                    <label>Statement closes on the</label>
+                                    <select id="neoBillingDate" class="billing-date-select">
+                                        <option value="">Not set</option>
+                                    </select>
+                                    <span>of each month</span>
+                                </div>
+                                <div class="current-cycle" id="neoCurrentCycle"></div>
+                            </div>
+                            
+                            <div class="billing-date-item">
+                                <div class="card-label rbc-label">
+                                    <span class="card-icon">💳</span>
+                                    <span>RBC Card</span>
+                                </div>
+                                <div class="date-selector">
+                                    <label>Statement closes on the</label>
+                                    <select id="rbcBillingDate" class="billing-date-select">
+                                        <option value="">Not set</option>
+                                    </select>
+                                    <span>of each month</span>
+                                </div>
+                                <div class="current-cycle" id="rbcCurrentCycle"></div>
+                            </div>
+                        </div>
+                        
+                        <button id="saveBillingDates" class="save-billing-btn">Save Billing Dates</button>
+                    </div>
+                    
+                    <!-- Notification Preferences -->
+                    <div class="settings-section">
+                        <h3>Notifications</h3>
+                        <p class="settings-description">Configure when to receive alerts</p>
+                        
+                        <div class="notification-settings">
+                            <label class="notification-option">
+                                <input type="checkbox" id="statementCloseAlert" checked>
+                                <span>Statement closing reminders (3 days before)</span>
+                            </label>
+                            <label class="notification-option">
+                                <input type="checkbox" id="budgetAlert" checked>
+                                <span>Budget threshold alerts (80% spent)</span>
+                            </label>
+                            <label class="notification-option">
+                                <input type="checkbox" id="paymentDueAlert" checked>
+                                <span>Payment due reminders</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Data Management -->
+                    <div class="settings-section">
+                        <h3>Data Management</h3>
+                        <div class="data-actions">
+                            <button id="exportAllData" class="data-btn">Export All Data</button>
+                            <button id="clearOldData" class="data-btn secondary">Clear Old Data</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -518,6 +634,10 @@
     
     <!-- App Scripts -->
     <script src="firebase-config.js"></script>
+    <script src="billing-cycles.js"></script>
     <script src="app.js"></script>
+    <script src="helpers.js"></script>
+    <script src="settings-functions.js"></script>
+    <script src="dashboard-update.js"></script>
 </body>
 </html>
