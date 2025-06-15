@@ -278,26 +278,61 @@ expenseForm.addEventListener('submit', async (e) => {
 async function loadUserData() {
     if (!currentUser) return;
     
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    
     try {
-        const snapshot = await db.collection('expenses')
-            .where('userId', '==', currentUser.uid)
-            .where('timestamp', '>=', startOfMonth)
-            .get();
-        
         let neoSum = 0;
         let rbcSum = 0;
         
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            if (data.card === 'neo') {
-                neoSum += data.amount;
-            } else if (data.card === 'rbc') {
-                rbcSum += data.amount;
+        if (billingCycleManager && billingCycleManager.viewMode === 'billing') {
+            // Billing cycle view - get expenses for each card's cycle
+            const neoCycle = billingCycleManager.getCurrentBillingCycle('neo');
+            const rbcCycle = billingCycleManager.getCurrentBillingCycle('rbc');
+            
+            // Get Neo expenses if cycle is configured
+            if (neoCycle) {
+                const neoSnapshot = await db.collection('expenses')
+                    .where('userId', '==', currentUser.uid)
+                    .where('card', '==', 'neo')
+                    .where('timestamp', '>=', neoCycle.start)
+                    .where('timestamp', '<=', neoCycle.end)
+                    .get();
+                
+                neoSnapshot.forEach(doc => {
+                    neoSum += doc.data().amount;
+                });
             }
-        });
+            
+            // Get RBC expenses if cycle is configured
+            if (rbcCycle) {
+                const rbcSnapshot = await db.collection('expenses')
+                    .where('userId', '==', currentUser.uid)
+                    .where('card', '==', 'rbc')
+                    .where('timestamp', '>=', rbcCycle.start)
+                    .where('timestamp', '<=', rbcCycle.end)
+                    .get();
+                
+                rbcSnapshot.forEach(doc => {
+                    rbcSum += doc.data().amount;
+                });
+            }
+        } else {
+            // Calendar month view (default)
+            const now = new Date();
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            
+            const snapshot = await db.collection('expenses')
+                .where('userId', '==', currentUser.uid)
+                .where('timestamp', '>=', startOfMonth)
+                .get();
+            
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.card === 'neo') {
+                    neoSum += data.amount;
+                } else if (data.card === 'rbc') {
+                    rbcSum += data.amount;
+                }
+            });
+        }
         
         neoTotal.textContent = `$${neoSum.toFixed(2)}`;
         rbcTotal.textContent = `$${rbcSum.toFixed(2)}`;
