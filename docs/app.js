@@ -315,7 +315,7 @@ async function loadUserData() {
                 });
             }
         } else {
-            // Calendar month view (default)
+            // Calendar month view (default) - always use calendar month regardless of billing date settings
             const now = new Date();
             const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
             
