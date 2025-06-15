@@ -12,7 +12,19 @@ const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
 // Categories configuration
-const categories = ['food', 'delivery', 'groceries', 'shopping', 'entertainment', 'other'];
+const categoriesByCard = {
+    neo: ['streaming', 'software', 'utilities', 'insurance', 'memberships', 'other-bills'],
+    rbc: ['food', 'delivery', 'groceries', 'shopping', 'entertainment', 'other']
+};
+
+// Subscription templates for Neo card
+const subscriptionTemplates = [
+    { name: 'Netflix', amount: 15.99, category: 'streaming' },
+    { name: 'Spotify', amount: 9.99, category: 'streaming' },
+    { name: 'Phone Bill', amount: 50.00, category: 'utilities' },
+    { name: 'Internet', amount: 60.00, category: 'utilities' },
+    { name: 'Amazon Prime', amount: 14.99, category: 'memberships' }
+];
 
 // DOM Elements
 const loginScreen = document.getElementById('loginScreen');
@@ -71,11 +83,84 @@ cardButtons.forEach(btn => {
         cardButtons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         selectedCard = btn.dataset.card;
+        updateCategoryButtons();
+        
+        // Update form data attribute for styling
+        const expenseForm = document.getElementById('expenseForm');
+        if (expenseForm) {
+            expenseForm.setAttribute('data-active-card', selectedCard);
+        }
+        
+        // Show/hide recurring checkbox and templates based on card
+        const recurringSection = document.getElementById('recurringSection');
+        const templatesSection = document.getElementById('templatesSection');
+        if (recurringSection) {
+            recurringSection.style.display = selectedCard === 'neo' ? 'block' : 'none';
+        }
+        if (templatesSection) {
+            templatesSection.style.display = selectedCard === 'neo' ? 'block' : 'none';
+        }
     });
 });
 
-// Category Selection
-const categoryButtons = document.querySelectorAll('.category-btn');
+// Function to update category buttons based on selected card
+function updateCategoryButtons() {
+    const categoryGrid = document.querySelector('.category-grid');
+    if (!categoryGrid) return;
+    
+    const categories = categoriesByCard[selectedCard];
+    categoryGrid.innerHTML = categories.map(category => `
+        <button type="button" class="category-btn" data-category="${category}">
+            <span class="category-icon">${getCategoryIcon(category)}</span>
+            <span class="category-name">${formatCategoryName(category)}</span>
+        </button>
+    `).join('');
+    
+    // Re-attach event listeners to new buttons
+    const newCategoryButtons = categoryGrid.querySelectorAll('.category-btn');
+    newCategoryButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            newCategoryButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedCategory = btn.dataset.category;
+        });
+    });
+}
+
+// Helper function to format category names
+function formatCategoryName(category) {
+    return category.split('-').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+}
+
+// Function to apply subscription template
+function applyTemplate(templateIndex) {
+    const template = subscriptionTemplates[templateIndex];
+    if (!template) return;
+    
+    // Set amount
+    const amountInput = document.getElementById('amountInput');
+    if (amountInput) amountInput.value = template.amount;
+    
+    // Set description
+    const descriptionInput = document.getElementById('descriptionInput');
+    if (descriptionInput) descriptionInput.value = template.name;
+    
+    // Set category
+    selectedCategory = template.category;
+    const categoryButtons = document.querySelectorAll('.category-btn');
+    categoryButtons.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.category === template.category);
+    });
+    
+    // Check recurring checkbox
+    const recurringCheckbox = document.getElementById('isRecurringCheckbox');
+    if (recurringCheckbox) recurringCheckbox.checked = true;
+}
+
+// Category Selection - Initial setup
+let categoryButtons = document.querySelectorAll('.category-btn');
 categoryButtons.forEach(btn => {
     btn.addEventListener('click', () => {
         categoryButtons.forEach(b => b.classList.remove('active'));
@@ -106,6 +191,13 @@ auth.onAuthStateChanged(user => {
         loadUserData();
         loadUserBudget();
         checkFirstTimeUser();
+        // Initialize category buttons for default card (RBC)
+        updateCategoryButtons();
+        // Set initial form data attribute
+        const expenseForm = document.getElementById('expenseForm');
+        if (expenseForm) {
+            expenseForm.setAttribute('data-active-card', selectedCard);
+        }
     } else {
         loginScreen.classList.add('active');
         mainApp.classList.remove('active');
@@ -127,13 +219,16 @@ expenseForm.addEventListener('submit', async (e) => {
         return;
     }
     
+    const isRecurring = document.getElementById('isRecurringCheckbox')?.checked || false;
+    
     const expense = {
         amount: amount,
         card: selectedCard,
         category: selectedCategory,
         description: descriptionInput.value.trim(),
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        userId: currentUser.uid
+        userId: currentUser.uid,
+        isRecurring: isRecurring
     };
     
     try {
@@ -153,6 +248,11 @@ expenseForm.addEventListener('submit', async (e) => {
         descriptionInput.value = '';
         categoryButtons.forEach(b => b.classList.remove('active'));
         selectedCategory = null;
+        
+        // Reset recurring checkbox
+        const recurringCheckbox = document.getElementById('isRecurringCheckbox');
+        if (recurringCheckbox) recurringCheckbox.checked = false;
+        
         amountInput.focus();
         
         // Update totals
@@ -200,6 +300,9 @@ async function loadUserData() {
     }
 }
 
+// Track active recurring filter
+let activeRecurringFilter = 'all';
+
 // Load Recent Expenses
 async function loadRecentExpenses() {
     if (!currentUser) return;
@@ -234,6 +337,13 @@ async function loadRecentExpenses() {
             filteredExpenses = expenses.filter(exp => exp.card === cardFilter);
         }
         
+        // Filter by recurring status
+        if (activeRecurringFilter === 'recurring') {
+            filteredExpenses = filteredExpenses.filter(exp => exp.isRecurring === true);
+        } else if (activeRecurringFilter === 'one-time') {
+            filteredExpenses = filteredExpenses.filter(exp => !exp.isRecurring);
+        }
+        
         // Filter by search term
         if (searchTerm) {
             filteredExpenses = filteredExpenses.filter(exp => 
@@ -257,14 +367,15 @@ async function loadRecentExpenses() {
                 const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 
                 return `
-                    <div class="expense-item">
+                    <div class="expense-item ${expense.isRecurring ? 'recurring' : ''}">
                         <div class="expense-details">
                             <div class="expense-header">
                                 <span class="expense-amount">$${expense.amount.toFixed(2)}</span>
                                 <span class="expense-card">${expense.card.toUpperCase()}</span>
+                                ${expense.isRecurring ? '<span class="recurring-badge">🔄 Recurring</span>' : ''}
                             </div>
                             <div class="expense-info">
-                                <span>${getCategoryIcon(expense.category)} ${expense.category}</span>
+                                <span>${getCategoryIcon(expense.category)} ${formatCategoryName(expense.category)}</span>
                                 <span>${dateStr} ${timeStr}</span>
                             </div>
                             ${expense.description ? `<div class="expense-description">${expense.description}</div>` : ''}
@@ -286,6 +397,24 @@ async function loadRecentExpenses() {
 // Filter event listeners
 document.getElementById('cardFilter').addEventListener('change', loadRecentExpenses);
 document.getElementById('searchInput').addEventListener('input', loadRecentExpenses);
+
+// Recurring filter tabs
+document.addEventListener('DOMContentLoaded', () => {
+    const filterTabs = document.querySelectorAll('.filter-tab');
+    filterTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Update active tab
+            filterTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            // Update filter
+            activeRecurringFilter = tab.dataset.filter;
+            
+            // Reload expenses
+            loadRecentExpenses();
+        });
+    });
+});
 
 // Load Summary
 async function loadSummary() {
@@ -508,12 +637,20 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
 // Helper function to get category icon
 function getCategoryIcon(category) {
     const icons = {
+        // RBC categories
         food: '🍔',
         delivery: '🚚',
         groceries: '🛒',
         shopping: '🛍️',
         entertainment: '🎬',
-        other: '📦'
+        other: '📦',
+        // Neo categories
+        streaming: '📺',
+        software: '💻',
+        utilities: '⚡',
+        insurance: '🛡️',
+        memberships: '🎫',
+        'other-bills': '📄'
     };
     return icons[category] || '📦';
 }
@@ -897,9 +1034,136 @@ document.querySelectorAll('.card-view-tab').forEach(tab => {
     });
 });
 
+// Function to load subscription overview
+async function loadSubscriptionOverview() {
+    if (!currentUser) return;
+    
+    const subscriptionOverview = document.getElementById('subscriptionOverview');
+    const subscriptionList = document.getElementById('subscriptionList');
+    
+    try {
+        // Get current month's recurring expenses
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        
+        const snapshot = await db.collection('expenses')
+            .where('userId', '==', currentUser.uid)
+            .where('timestamp', '>=', startOfMonth)
+            .where('isRecurring', '==', true)
+            .orderBy('timestamp', 'desc')
+            .get();
+        
+        const subscriptions = [];
+        snapshot.forEach(doc => {
+            subscriptions.push({ id: doc.id, ...doc.data() });
+        });
+        
+        if (subscriptions.length > 0) {
+            subscriptionOverview.style.display = 'block';
+            
+            subscriptionList.innerHTML = subscriptions.map(sub => {
+                const date = sub.timestamp ? sub.timestamp.toDate() : new Date();
+                return `
+                    <div class="subscription-item">
+                        <div class="subscription-icon">${getCategoryIcon(sub.category)}</div>
+                        <div class="subscription-details">
+                            <div class="subscription-name">${sub.description || formatCategoryName(sub.category)}</div>
+                            <div class="subscription-info">
+                                <span class="subscription-amount">$${sub.amount.toFixed(2)}/month</span>
+                                <span class="subscription-card">${sub.card.toUpperCase()}</span>
+                            </div>
+                        </div>
+                        <div class="subscription-date">
+                            Last charged: ${date.toLocaleDateString()}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            subscriptionOverview.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error loading subscriptions:', error);
+        subscriptionOverview.style.display = 'none';
+    }
+}
+
+// Function to update card usage displays
+function updateCardUsageDisplay(cardTotalSpent, recurringTotal) {
+    // Default Neo budget to $700
+    const neoBudget = 700;
+    const neoSpent = cardTotalSpent.neo || 0;
+    const neoPercentage = Math.round((neoSpent / neoBudget) * 100);
+    
+    // Update Neo card display
+    document.getElementById('neoUsageAmount').textContent = `$${neoSpent.toFixed(2)}`;
+    document.getElementById('neoUsagePercentage').textContent = `${neoPercentage}%`;
+    
+    const neoProgress = document.getElementById('neoProgress');
+    neoProgress.style.width = `${Math.min(neoPercentage, 100)}%`;
+    
+    // Apply color coding for Neo
+    neoProgress.classList.remove('safe', 'warning', 'danger');
+    if (neoPercentage < 70) {
+        neoProgress.classList.add('safe');
+        document.getElementById('neoStatus').textContent = '✅ On Track';
+    } else if (neoPercentage < 90) {
+        neoProgress.classList.add('warning');
+        document.getElementById('neoStatus').textContent = '⚠️ Approaching Limit';
+    } else {
+        neoProgress.classList.add('danger');
+        document.getElementById('neoStatus').textContent = '🚨 Over Budget';
+    }
+    
+    // Update RBC card display
+    const rbcSpent = cardTotalSpent.rbc || 0;
+    let rbcBudget = 0;
+    
+    if (userBudget && userBudget.rbc) {
+        if (userBudget.rbc.mode === 'total') {
+            rbcBudget = userBudget.rbc.total || 0;
+        } else {
+            // Sum individual category budgets
+            Object.keys(userBudget.rbc).forEach(key => {
+                if (key !== 'mode' && typeof userBudget.rbc[key] === 'number') {
+                    rbcBudget += userBudget.rbc[key];
+                }
+            });
+        }
+    }
+    
+    document.getElementById('rbcUsageAmount').textContent = `$${rbcSpent.toFixed(2)}`;
+    document.getElementById('rbcUsageLimit').textContent = `/ $${rbcBudget.toFixed(0)}`;
+    
+    if (rbcBudget > 0) {
+        const rbcPercentage = Math.round((rbcSpent / rbcBudget) * 100);
+        document.getElementById('rbcUsagePercentage').textContent = `${rbcPercentage}%`;
+        
+        const rbcProgress = document.getElementById('rbcProgress');
+        rbcProgress.style.width = `${Math.min(rbcPercentage, 100)}%`;
+        
+        // Apply color coding for RBC
+        rbcProgress.classList.remove('safe', 'warning', 'danger');
+        if (rbcPercentage < 70) {
+            rbcProgress.classList.add('safe');
+            document.getElementById('rbcStatus').textContent = '✅ On Track';
+        } else if (rbcPercentage < 90) {
+            rbcProgress.classList.add('warning');
+            document.getElementById('rbcStatus').textContent = '⚠️ Approaching Limit';
+        } else {
+            rbcProgress.classList.add('danger');
+            document.getElementById('rbcStatus').textContent = '🚨 Over Budget';
+        }
+    } else {
+        document.getElementById('rbcUsagePercentage').textContent = '—';
+        document.getElementById('rbcProgress').style.width = '0%';
+        document.getElementById('rbcStatus').textContent = '📊 Set Budget';
+    }
+}
+
 // Dashboard Functions
 async function loadDashboard() {
-    if (!currentUser || !userBudget) return;
+    if (!currentUser) return;
     
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -921,13 +1185,16 @@ async function loadDashboard() {
             rbc: {}
         };
         
-        categories.forEach(cat => {
-            cardExpenses.neo[cat] = 0;
-            cardExpenses.rbc[cat] = 0;
+        // Initialize category totals for both cards
+        Object.keys(categoriesByCard).forEach(card => {
+            categoriesByCard[card].forEach(cat => {
+                if (!cardExpenses[card][cat]) cardExpenses[card][cat] = 0;
+            });
         });
         
         let totalSpent = 0;
         let cardTotalSpent = { neo: 0, rbc: 0 };
+        let recurringTotal = 0;
         
         snapshot.forEach(doc => {
             const data = doc.data();
@@ -939,10 +1206,30 @@ async function loadDashboard() {
                 cardExpenses[card][category] += amount;
                 cardTotalSpent[card] += amount;
                 totalSpent += amount;
+                
+                // Track recurring expenses
+                if (data.isRecurring) {
+                    recurringTotal += amount;
+                }
             }
         });
         
         monthlyExpenses = cardExpenses;
+        
+        // Update enhanced card usage displays
+        updateCardUsageDisplay(cardTotalSpent, recurringTotal);
+        
+        // Update month insights
+        document.getElementById('daysRemaining').textContent = daysRemaining;
+        document.getElementById('dailyAverage').textContent = `$${(totalSpent / daysPassed).toFixed(2)}`;
+        document.getElementById('recurringTotal').textContent = `$${recurringTotal.toFixed(2)}`;
+        
+        // Load subscription overview if Neo card is selected
+        if (currentDashboardView === 'neo' || (currentDashboardView === 'combined' && recurringTotal > 0)) {
+            loadSubscriptionOverview();
+        } else {
+            document.getElementById('subscriptionOverview').style.display = 'none';
+        }
         
         // Calculate budgets and display based on current view
         let displayBudget = {};

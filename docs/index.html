@@ -74,47 +74,70 @@
                     <button id="manageBudgetBtn" class="manage-budget-btn">⚙️ Manage Budget</button>
                 </div>
                 
+                <!-- Enhanced Card Usage Display -->
+                <div class="card-usage-display">
+                    <div class="card-usage-item neo-card">
+                        <div class="card-header">
+                            <h3>Neo Credit Card</h3>
+                            <span class="card-type">Bills & Subscriptions</span>
+                        </div>
+                        <div class="usage-amount">
+                            <span id="neoUsageAmount">$0</span>
+                            <span class="usage-limit">/ $700</span>
+                        </div>
+                        <div class="usage-percentage" id="neoUsagePercentage">0%</div>
+                        <div class="progress-bar-large">
+                            <div class="progress-fill-large neo-progress" id="neoProgress" style="width: 0%"></div>
+                        </div>
+                        <div class="usage-status" id="neoStatus">✅ On Track</div>
+                    </div>
+                    
+                    <div class="card-usage-item rbc-card">
+                        <div class="card-header">
+                            <h3>RBC Credit Card</h3>
+                            <span class="card-type">Daily Spending</span>
+                        </div>
+                        <div class="usage-amount">
+                            <span id="rbcUsageAmount">$0</span>
+                            <span class="usage-limit" id="rbcUsageLimit">/ $0</span>
+                        </div>
+                        <div class="usage-percentage" id="rbcUsagePercentage">0%</div>
+                        <div class="progress-bar-large">
+                            <div class="progress-fill-large rbc-progress" id="rbcProgress" style="width: 0%"></div>
+                        </div>
+                        <div class="usage-status" id="rbcStatus">Set Budget</div>
+                    </div>
+                </div>
+                
+                <!-- Month Insights -->
+                <div class="month-insights">
+                    <div class="insight-card">
+                        <span class="insight-icon">📅</span>
+                        <div class="insight-content">
+                            <span class="insight-label">Days Remaining</span>
+                            <span class="insight-value" id="daysRemaining">30</span>
+                        </div>
+                    </div>
+                    <div class="insight-card">
+                        <span class="insight-icon">💰</span>
+                        <div class="insight-content">
+                            <span class="insight-label">Daily Average</span>
+                            <span class="insight-value" id="dailyAverage">$0</span>
+                        </div>
+                    </div>
+                    <div class="insight-card">
+                        <span class="insight-icon">🔄</span>
+                        <div class="insight-content">
+                            <span class="insight-label">Recurring Total</span>
+                            <span class="insight-value" id="recurringTotal">$0</span>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="card-view-tabs">
                     <button class="card-view-tab active" data-view="combined">Combined</button>
                     <button class="card-view-tab" data-view="neo">Neo Card</button>
                     <button class="card-view-tab" data-view="rbc">RBC Card</button>
-                </div>
-                
-                <div class="month-summary">
-                    <div class="summary-card">
-                        <h3 id="summaryTitle">Monthly Status</h3>
-                        <div class="summary-stats">
-                            <div class="stat-item">
-                                <span class="stat-label">Spent</span>
-                                <span class="stat-value" id="totalSpent">$0</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">Budget</span>
-                                <span class="stat-value" id="totalBudget">$0</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">Remaining</span>
-                                <span class="stat-value" id="totalRemaining">$0</span>
-                            </div>
-                        </div>
-                        <div class="overall-progress">
-                            <div class="progress-bar">
-                                <div class="progress-fill" id="overallProgress" style="width: 0%"></div>
-                            </div>
-                            <span class="progress-text" id="overallProgressText">0% of budget used</span>
-                        </div>
-                    </div>
-                    
-                    <div class="summary-insights">
-                        <div class="insight-item">
-                            <span class="insight-icon">📅</span>
-                            <span id="daysRemaining">30 days remaining</span>
-                        </div>
-                        <div class="insight-item">
-                            <span class="insight-icon">💰</span>
-                            <span id="dailyAverage">$0/day average</span>
-                        </div>
-                    </div>
                 </div>
                 
                 <div class="budget-categories" id="budgetCategories">
@@ -123,6 +146,14 @@
                 
                 <div class="budget-alerts" id="budgetAlerts" style="display: none;">
                     <!-- Alert messages will be dynamically inserted here -->
+                </div>
+                
+                <!-- Subscription Overview Section -->
+                <div class="subscription-overview" id="subscriptionOverview" style="display: none;">
+                    <h3>Active Subscriptions</h3>
+                    <div id="subscriptionList">
+                        <!-- Recurring expenses will be listed here -->
+                    </div>
                 </div>
             </div>
             
@@ -172,6 +203,46 @@
                     <!-- Description (Optional) -->
                     <input type="text" id="descriptionInput" class="description-input" placeholder="Description (optional)">
 
+                    <!-- Recurring Expense Section (Neo Card Only) -->
+                    <div id="recurringSection" class="recurring-section" style="display: none;">
+                        <label class="recurring-label">
+                            <input type="checkbox" id="isRecurringCheckbox">
+                            <span>Mark as recurring expense</span>
+                        </label>
+                    </div>
+
+                    <!-- Subscription Templates Section (Neo Card Only) -->
+                    <div id="templatesSection" class="templates-section" style="display: none;">
+                        <h4>Quick Add Subscriptions:</h4>
+                        <div class="templates-grid">
+                            <button type="button" class="template-btn" onclick="applyTemplate(0)">
+                                <span class="template-icon">📺</span>
+                                <span class="template-name">Netflix</span>
+                                <span class="template-amount">$15.99</span>
+                            </button>
+                            <button type="button" class="template-btn" onclick="applyTemplate(1)">
+                                <span class="template-icon">🎵</span>
+                                <span class="template-name">Spotify</span>
+                                <span class="template-amount">$9.99</span>
+                            </button>
+                            <button type="button" class="template-btn" onclick="applyTemplate(2)">
+                                <span class="template-icon">📱</span>
+                                <span class="template-name">Phone Bill</span>
+                                <span class="template-amount">$50.00</span>
+                            </button>
+                            <button type="button" class="template-btn" onclick="applyTemplate(3)">
+                                <span class="template-icon">🌐</span>
+                                <span class="template-name">Internet</span>
+                                <span class="template-amount">$60.00</span>
+                            </button>
+                            <button type="button" class="template-btn" onclick="applyTemplate(4)">
+                                <span class="template-icon">📦</span>
+                                <span class="template-name">Prime</span>
+                                <span class="template-amount">$14.99</span>
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Save Button -->
                     <button type="submit" class="save-btn">SAVE EXPENSE</button>
                 </form>
@@ -182,6 +253,11 @@
 
             <!-- Recent View -->
             <div id="recentView" class="view">
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-filter="all">All</button>
+                    <button class="filter-tab" data-filter="one-time">One-time</button>
+                    <button class="filter-tab" data-filter="recurring">Recurring</button>
+                </div>
                 <div class="filter-controls">
                     <select id="cardFilter" class="filter-select">
                         <option value="all">All Cards</option>
