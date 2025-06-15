@@ -243,10 +243,11 @@ body {
 }
 
 .card-btn[data-card="neo"].active {
-    background: #007AFF;
-    color: white;
-    border-color: #007AFF;
-    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+    background: #E3F2FD;
+    color: #1565C0;
+    border-color: #1976D2;
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
+    font-weight: 600;
 }
 
 .card-btn[data-card="rbc"].active {
@@ -309,15 +310,17 @@ body {
 }
 
 .category-btn.active {
-    background: var(--secondary-color);
-    color: white;
-    border-color: var(--secondary-color);
+    background: #E8F5E9;
+    color: #2E7D32;
+    border-color: #4CAF50;
+    font-weight: 600;
 }
 
 /* Neo card active categories */
 [data-active-card="neo"] .category-btn.active {
-    background: #007AFF;
-    border-color: #007AFF;
+    background: #E3F2FD;
+    border-color: #1976D2;
+    color: #1565C0;
 }
 
 /* RBC card active categories */
@@ -900,9 +903,10 @@ body {
 }
 
 .period-btn.active {
-    background: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
+    background: #E3F2FD;
+    color: #1565C0;
+    border-color: #1976D2;
+    font-weight: 600;
 }
 
 .category-breakdown {
@@ -1450,8 +1454,9 @@ body {
 }
 
 .card-view-tab.active {
-    background: var(--primary-color);
-    color: white;
+    background: #E3F2FD;
+    color: #1565C0;
+    font-weight: 600;
 }
 
 .card-view-tab:hover:not(.active) {
@@ -1687,8 +1692,9 @@ body {
 }
 
 .budget-tab.active {
-    background: var(--primary-color);
-    color: white;
+    background: #E3F2FD;
+    color: #1565C0;
+    font-weight: 600;
 }
 
 .budget-tab:hover:not(.active) {
