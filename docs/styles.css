@@ -711,6 +711,34 @@ body {
     border-color: var(--primary-color);
 }
 
+/* Date Input Styling */
+.date-input-container {
+    margin-top: 16px;
+}
+
+.date-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.expense-date-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--background);
+    font-size: 16px;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+}
+
+.expense-date-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
 /* Save Button */
 .save-btn {
     width: 100%;

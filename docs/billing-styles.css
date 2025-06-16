@@ -72,3 +72,168 @@
 .statement-alert-icon {
     font-size: 18px;
 }
+
+/* Enhanced Period Display Styles */
+.period-display {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+}
+
+.period-display.calendar-mode {
+    border-left: 4px solid var(--primary-color);
+}
+
+.period-display.billing-mode {
+    border-left: 4px solid #8b5cf6;
+}
+
+.period-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.period-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.period-progress {
+    font-size: 14px;
+    color: var(--text-secondary);
+    background: var(--background);
+    padding: 4px 12px;
+    border-radius: 16px;
+}
+
+.period-range-display {
+    margin-top: 12px;
+}
+
+.date-range-box {
+    background: var(--background);
+    padding: 16px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.range-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.range-dates {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* Billing Mode Styles */
+.billing-ranges {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.card-range-box {
+    background: var(--background);
+    padding: 16px;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.card-range-box.neo-range {
+    border-left: 3px solid #8b5cf6;
+}
+
+.card-range-box.rbc-range {
+    border-left: 3px solid #0ea5e9;
+}
+
+.card-range-box.no-date {
+    opacity: 0.7;
+}
+
+.card-label {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.card-range-box.neo-range .card-label {
+    color: #8b5cf6;
+}
+
+.card-range-box.rbc-range .card-label {
+    color: #0ea5e9;
+}
+
+.cycle-progress {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Progress bar for billing cycles */
+.cycle-progress-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(0,0,0,0.1);
+}
+
+.cycle-progress-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.card-range-box.neo-range .cycle-progress-fill {
+    background: #8b5cf6;
+}
+
+.card-range-box.rbc-range .cycle-progress-fill {
+    background: #0ea5e9;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .period-display {
+        padding: 16px;
+    }
+    
+    .period-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .period-title {
+        font-size: 16px;
+    }
+    
+    .date-range-box,
+    .card-range-box {
+        padding: 12px;
+    }
+}

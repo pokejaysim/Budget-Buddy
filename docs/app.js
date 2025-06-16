@@ -41,6 +41,7 @@ const userEmail = document.getElementById('userEmail');
 const expenseForm = document.getElementById('expenseForm');
 const amountInput = document.getElementById('amountInput');
 const descriptionInput = document.getElementById('descriptionInput');
+const expenseDateInput = document.getElementById('expenseDate');
 const successMessage = document.getElementById('successMessage');
 const neoTotal = document.getElementById('neoTotal');
 const rbcTotal = document.getElementById('rbcTotal');
@@ -223,6 +224,13 @@ auth.onAuthStateChanged(async user => {
         if (expenseForm) {
             expenseForm.setAttribute('data-active-card', selectedCard);
         }
+        
+        // Initialize date picker with today's date and max constraint
+        if (expenseDateInput) {
+            const today = new Date().toISOString().split('T')[0];
+            expenseDateInput.value = today;
+            expenseDateInput.max = today; // Prevent future dates
+        }
     } else {
         loginScreen.classList.add('active');
         mainApp.classList.remove('active');
@@ -246,12 +254,23 @@ expenseForm.addEventListener('submit', async (e) => {
     
     const isRecurring = document.getElementById('isRecurringCheckbox')?.checked || false;
     
+    // Get selected date or use today
+    let expenseDate;
+    if (expenseDateInput && expenseDateInput.value) {
+        // Parse the date and set to noon to avoid timezone issues
+        expenseDate = new Date(expenseDateInput.value + 'T12:00:00');
+    } else {
+        expenseDate = new Date();
+    }
+    
+    console.log('💰 Adding expense for date:', expenseDate.toLocaleDateString());
+    
     const expense = {
         amount: amount,
         card: selectedCard,
         category: selectedCategory,
         description: descriptionInput.value.trim(),
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        timestamp: firebase.firestore.Timestamp.fromDate(expenseDate),
         userId: currentUser.uid,
         isRecurring: isRecurring
     };
@@ -277,6 +296,12 @@ expenseForm.addEventListener('submit', async (e) => {
         // Reset recurring checkbox
         const recurringCheckbox = document.getElementById('isRecurringCheckbox');
         if (recurringCheckbox) recurringCheckbox.checked = false;
+        
+        // Keep date as today for convenience
+        if (expenseDateInput) {
+            const today = new Date().toISOString().split('T')[0];
+            expenseDateInput.value = today;
+        }
         
         amountInput.focus();
         
@@ -685,6 +710,100 @@ installBtn.addEventListener('click', async () => {
     deferredPrompt = null;
     installBtn.classList.remove('show');
 });
+
+// Test Data Function - Add test expenses for dual tracking testing
+async function addTestExpenses() {
+    if (!currentUser) {
+        console.error('No user logged in!');
+        return;
+    }
+    
+    console.log('🧪 Adding test expenses for dual tracking testing...');
+    
+    const testExpenses = [
+        {
+            date: new Date(2025, 4, 15), // May 15, 2025
+            card: 'neo',
+            amount: 50,
+            category: 'streaming',
+            description: 'Netflix subscription test',
+            isRecurring: false
+        },
+        {
+            date: new Date(2025, 5, 5), // June 5, 2025
+            card: 'rbc',
+            amount: 75,
+            category: 'food',
+            description: 'Restaurant test',
+            isRecurring: false
+        },
+        {
+            date: new Date(2025, 6, 8), // July 8, 2025
+            card: 'neo',
+            amount: 100,
+            category: 'utilities',
+            description: 'Internet bill test',
+            isRecurring: false
+        },
+        {
+            date: new Date(2025, 5, 15), // June 15, 2025
+            card: 'rbc',
+            amount: 25,
+            category: 'groceries',
+            description: 'Grocery shopping test',
+            isRecurring: false
+        }
+    ];
+    
+    try {
+        for (const testExpense of testExpenses) {
+            const expense = {
+                amount: testExpense.amount,
+                card: testExpense.card,
+                category: testExpense.category,
+                description: testExpense.description,
+                timestamp: firebase.firestore.Timestamp.fromDate(testExpense.date),
+                userId: currentUser.uid,
+                isRecurring: testExpense.isRecurring
+            };
+            
+            await db.collection('expenses').add(expense);
+            console.log(`✅ Added test expense: ${testExpense.description} - $${testExpense.amount} on ${testExpense.date.toLocaleDateString()}`);
+        }
+        
+        console.log('🎉 All test expenses added successfully!');
+        
+        // Reload data to show the new expenses
+        await loadUserData();
+        
+        // Reload current view
+        const activeView = document.querySelector('.nav-btn.active');
+        if (activeView) {
+            if (activeView.dataset.view === 'dashboard') {
+                await loadDashboard();
+            } else if (activeView.dataset.view === 'recent') {
+                await loadRecentExpenses();
+            } else if (activeView.dataset.view === 'summary') {
+                await loadSummary();
+            }
+        }
+        
+        // Show success message
+        const successMsg = document.getElementById('successMessage');
+        if (successMsg) {
+            successMsg.textContent = 'Test expenses added successfully!';
+            successMsg.classList.add('show');
+            setTimeout(() => successMsg.classList.remove('show'), 3000);
+        }
+        
+    } catch (error) {
+        console.error('Error adding test expenses:', error);
+        alert('Failed to add test expenses. Check console for details.');
+    }
+}
+
+// Make the function available globally for easy testing
+window.addTestExpenses = addTestExpenses;
 
 // Service Worker Registration
 if ('serviceWorker' in navigator) {

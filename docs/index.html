@@ -226,6 +226,12 @@
                     <!-- Description (Optional) -->
                     <input type="text" id="descriptionInput" class="description-input" placeholder="Description (optional)">
 
+                    <!-- Date Selection -->
+                    <div class="date-input-container">
+                        <label for="expenseDate" class="date-label">Date (optional - defaults to today)</label>
+                        <input type="date" id="expenseDate" class="expense-date-input" max="">
+                    </div>
+
                     <!-- Recurring Expense Section (Neo Card Only) -->
                     <div id="recurringSection" class="recurring-section" style="display: none;">
                         <label class="recurring-label">
@@ -402,6 +408,15 @@
                         <div class="data-actions">
                             <button id="exportAllData" class="data-btn">Export All Data</button>
                             <button id="clearOldData" class="data-btn secondary">Clear Old Data</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Developer Tools -->
+                    <div class="settings-section">
+                        <h3>Developer Tools</h3>
+                        <p class="settings-description">Testing utilities for development</p>
+                        <div class="data-actions">
+                            <button id="addTestData" class="data-btn" onclick="addTestExpenses()">Add Test Expenses</button>
                         </div>
                     </div>
                 </div>

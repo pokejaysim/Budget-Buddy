@@ -23,8 +23,15 @@ async function calculateCalendarTotals() {
         snapshot.forEach(doc => {
             const data = doc.data();
             const expenseDate = data.timestamp.toDate();
+            const dateStr = expenseDate.toLocaleDateString();
             
-            console.log(`📅 Including expense: ${data.card} $${data.amount} on ${expenseDate.toLocaleDateString()}`);
+            // Detailed logging
+            const isWithinRange = expenseDate >= dateRange.start && expenseDate <= dateRange.end;
+            const reason = isWithinRange 
+                ? `✅ Within ${dateRange.start.toLocaleDateString()} - ${dateRange.end.toLocaleDateString()}`
+                : `❌ Outside range`;
+            
+            console.log(`📅 CALENDAR: ${data.card.toUpperCase()} expense $${data.amount} on ${dateStr} - ${reason}`);
             
             if (data.card === 'neo') {
                 neoTotal += data.amount;
@@ -71,8 +78,14 @@ async function calculateBillingTotals() {
             neoSnapshot.forEach(doc => {
                 const data = doc.data();
                 const expenseDate = data.timestamp.toDate();
+                const dateStr = expenseDate.toLocaleDateString();
                 
-                console.log(`💳 NEO Including expense: $${data.amount} on ${expenseDate.toLocaleDateString()}`);
+                const isWithinRange = expenseDate >= neoDateRange.start && expenseDate <= neoDateRange.end;
+                const reason = isWithinRange 
+                    ? `✅ Within ${neoDateRange.start.toLocaleDateString()} - ${neoDateRange.end.toLocaleDateString()}`
+                    : `❌ Outside range`;
+                
+                console.log(`💳 NEO BILLING: expense $${data.amount} on ${dateStr} - ${reason}`);
                 
                 neoTotal += data.amount;
                 neoExpenseCount++;
@@ -105,8 +118,14 @@ async function calculateBillingTotals() {
             rbcSnapshot.forEach(doc => {
                 const data = doc.data();
                 const expenseDate = data.timestamp.toDate();
+                const dateStr = expenseDate.toLocaleDateString();
                 
-                console.log(`💳 RBC Including expense: $${data.amount} on ${expenseDate.toLocaleDateString()}`);
+                const isWithinRange = expenseDate >= rbcDateRange.start && expenseDate <= rbcDateRange.end;
+                const reason = isWithinRange 
+                    ? `✅ Within ${rbcDateRange.start.toLocaleDateString()} - ${rbcDateRange.end.toLocaleDateString()}`
+                    : `❌ Outside range`;
+                
+                console.log(`💳 RBC BILLING: expense $${data.amount} on ${dateStr} - ${reason}`);
                 
                 rbcTotal += data.amount;
                 rbcExpenseCount++;
@@ -164,32 +183,74 @@ function updateDateRangeDisplay() {
     
     if (billingCycleManager.viewMode === 'calendar') {
         const dateRange = billingCycleManager.getCalendarDateRange();
+        const now = new Date();
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const daysPassed = now.getDate();
+        const progress = Math.round((daysPassed / daysInMonth) * 100);
+        
         periodDetails.innerHTML = `
-            <div>
-                <div class="period-title">📅 Calendar Month</div>
-                <div class="period-dates">Showing expenses from ${dateRange.description}</div>
+            <div class="period-display calendar-mode">
+                <div class="period-header">
+                    <div class="period-title">📅 Calendar Month View</div>
+                    <div class="period-progress">${progress}% complete</div>
+                </div>
+                <div class="period-range-display">
+                    <div class="date-range-box">
+                        <span class="range-label">Showing expenses from:</span>
+                        <span class="range-dates">${dateRange.description}</span>
+                    </div>
+                </div>
             </div>
         `;
     } else {
         const neoRange = billingCycleManager.getBillingDateRange('neo');
         const rbcRange = billingCycleManager.getBillingDateRange('rbc');
         
-        let html = '<div>';
-        html += '<div class="period-title">💳 Billing Cycles</div>';
+        let html = '<div class="period-display billing-mode">';
+        html += '<div class="period-header">';
+        html += '<div class="period-title">💳 Billing Cycle View</div>';
+        html += '</div>';
+        html += '<div class="billing-ranges">';
         
         if (neoRange) {
-            html += `<div class="period-dates">Neo: ${neoRange.description}</div>`;
+            const neoCycle = billingCycleManager.getCurrentBillingCycle('neo');
+            const neoProgress = neoCycle ? Math.round(neoCycle.progress) : 0;
+            html += `
+                <div class="card-range-box neo-range">
+                    <div class="card-label">Neo Card</div>
+                    <div class="range-dates">${neoRange.description}</div>
+                    <div class="cycle-progress">${neoProgress}% complete • ${neoCycle ? neoCycle.daysRemaining : 0} days left</div>
+                </div>
+            `;
         } else {
-            html += '<div class="period-dates">Neo: No billing date set</div>';
+            html += `
+                <div class="card-range-box neo-range no-date">
+                    <div class="card-label">Neo Card</div>
+                    <div class="range-dates">No billing date configured</div>
+                </div>
+            `;
         }
         
         if (rbcRange) {
-            html += `<div class="period-dates">RBC: ${rbcRange.description}</div>`;
+            const rbcCycle = billingCycleManager.getCurrentBillingCycle('rbc');
+            const rbcProgress = rbcCycle ? Math.round(rbcCycle.progress) : 0;
+            html += `
+                <div class="card-range-box rbc-range">
+                    <div class="card-label">RBC Card</div>
+                    <div class="range-dates">${rbcRange.description}</div>
+                    <div class="cycle-progress">${rbcProgress}% complete • ${rbcCycle ? rbcCycle.daysRemaining : 0} days left</div>
+                </div>
+            `;
         } else {
-            html += '<div class="period-dates">RBC: No billing date set</div>';
+            html += `
+                <div class="card-range-box rbc-range no-date">
+                    <div class="card-label">RBC Card</div>
+                    <div class="range-dates">No billing date configured</div>
+                </div>
+            `;
         }
         
-        html += '</div>';
+        html += '</div></div>';
         periodDetails.innerHTML = html;
     }
 }
