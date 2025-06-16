@@ -13,11 +13,16 @@ async function loadDashboardEnhanced() {
         let expenses = [];
         let periodStart, periodEnd;
         
+        console.log('Dashboard - Current view mode:', billingCycleManager.viewMode);
+        console.log('Dashboard - Billing dates:', billingCycleManager.billingDates);
+        
         if (billingCycleManager.viewMode === 'calendar') {
             // Calendar month view
             const now = new Date();
             periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
             periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+            
+            console.log('Calendar mode - Period:', periodStart, 'to', periodEnd);
             
             // Get expenses for calendar month
             const snapshot = await db.collection('expenses')

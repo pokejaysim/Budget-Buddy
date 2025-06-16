@@ -60,6 +60,7 @@ class BillingCycleManager {
     // Get current billing cycle for a card
     getCurrentBillingCycle(card, referenceDate = new Date()) {
         const billingDate = this.billingDates[card];
+        console.log(`Getting billing cycle for ${card}, billing date:`, billingDate);
         if (!billingDate) return null;
 
         const today = new Date(referenceDate);
@@ -223,6 +224,15 @@ class BillingCycleManager {
         const neoSelect = document.getElementById('neoBillingDate');
         const rbcSelect = document.getElementById('rbcBillingDate');
         
+        if (!neoSelect || !rbcSelect) {
+            console.error('Billing date selectors not found');
+            return;
+        }
+        
+        // Clear existing options (except first)
+        neoSelect.innerHTML = '<option value="">Not set</option>';
+        rbcSelect.innerHTML = '<option value="">Not set</option>';
+        
         // Populate date options (1-31)
         for (let i = 1; i <= 31; i++) {
             const suffix = this.getDateSuffix(i);
@@ -272,7 +282,9 @@ class BillingCycleManager {
 
     // Toggle view mode
     toggleViewMode(mode) {
+        console.log('Toggling from', this.viewMode, 'to', mode);
         this.viewMode = mode;
+        console.log('Billing dates:', this.billingDates);
         return this.saveBillingSettings(currentUser.uid, { viewMode: mode });
     }
 }
