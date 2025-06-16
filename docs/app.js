@@ -201,15 +201,21 @@ auth.onAuthStateChanged(async user => {
         // Initialize billing cycle settings
         await billingCycleManager.initializeSettings(user.uid);
         
-        loadUserData();
-        loadUserBudget();
-        checkFirstTimeUser();
+        // Initialize dual tracking system
+        await loadUserData();
+        await loadUserBudget();
+        await checkFirstTimeUser();
         
-        // Initialize dashboard mode buttons
+        // Initialize dashboard mode buttons and date range display
         const currentMode = billingCycleManager.viewMode || 'calendar';
         document.querySelectorAll('.mode-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.mode === currentMode);
         });
+        
+        // Update date range display
+        if (typeof updateDateRangeDisplay === 'function') {
+            updateDateRangeDisplay();
+        }
         // Initialize category buttons for default card (RBC)
         updateCategoryButtons();
         // Set initial form data attribute
@@ -287,73 +293,14 @@ expenseForm.addEventListener('submit', async (e) => {
     }
 });
 
-// Load User Data
+// Load User Data - COMPLETELY REBUILT to use new dual tracking system
 async function loadUserData() {
     if (!currentUser) return;
     
-    try {
-        let neoSum = 0;
-        let rbcSum = 0;
-        
-        if (billingCycleManager && billingCycleManager.viewMode === 'billing') {
-            // Billing cycle view - get expenses for each card's cycle
-            const neoCycle = billingCycleManager.getCurrentBillingCycle('neo');
-            const rbcCycle = billingCycleManager.getCurrentBillingCycle('rbc');
-            
-            // Get Neo expenses if cycle is configured
-            if (neoCycle) {
-                const neoSnapshot = await db.collection('expenses')
-                    .where('userId', '==', currentUser.uid)
-                    .where('card', '==', 'neo')
-                    .where('timestamp', '>=', neoCycle.start)
-                    .where('timestamp', '<=', neoCycle.end)
-                    .get();
-                
-                neoSnapshot.forEach(doc => {
-                    neoSum += doc.data().amount;
-                });
-            }
-            
-            // Get RBC expenses if cycle is configured
-            if (rbcCycle) {
-                const rbcSnapshot = await db.collection('expenses')
-                    .where('userId', '==', currentUser.uid)
-                    .where('card', '==', 'rbc')
-                    .where('timestamp', '>=', rbcCycle.start)
-                    .where('timestamp', '<=', rbcCycle.end)
-                    .get();
-                
-                rbcSnapshot.forEach(doc => {
-                    rbcSum += doc.data().amount;
-                });
-            }
-        } else {
-            // Calendar month view (default) - always use calendar month regardless of billing date settings
-            const now = new Date();
-            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-            const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-            
-            const snapshot = await db.collection('expenses')
-                .where('userId', '==', currentUser.uid)
-                .where('timestamp', '>=', startOfMonth)
-                .where('timestamp', '<=', endOfMonth)
-                .get();
-            
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                if (data.card === 'neo') {
-                    neoSum += data.amount;
-                } else if (data.card === 'rbc') {
-                    rbcSum += data.amount;
-                }
-            });
-        }
-        
-        neoTotal.textContent = `$${neoSum.toFixed(2)}`;
-        rbcTotal.textContent = `$${rbcSum.toFixed(2)}`;
-    } catch (error) {
-        console.error('Error loading user data:', error);
-    }
+    console.log('\n🔄 LOAD USER DATA CALLED');
+    
+    // Use the new dual tracking calculation functions
+    await updateDashboardTotals();
 }
 
 // Track active recurring filter

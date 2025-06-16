@@ -283,6 +283,57 @@ class BillingCycleManager {
         }
     }
 
+    // Get Calendar Month Date Range
+    getCalendarDateRange() {
+        const now = new Date();
+        const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+        
+        return {
+            start: startDate,
+            end: endDate,
+            description: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
+            type: 'calendar'
+        };
+    }
+    
+    // Get Billing Cycle Date Range for a specific card
+    getBillingDateRange(card) {
+        const billingDate = this.billingDates[card];
+        if (!billingDate) {
+            return null;
+        }
+        
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth();
+        const day = today.getDate();
+
+        let cycleStart, cycleEnd;
+        
+        if (day >= billingDate) {
+            // Current cycle started this month
+            cycleStart = new Date(year, month, billingDate, 0, 0, 0);
+            cycleEnd = new Date(year, month + 1, billingDate - 1, 23, 59, 59);
+        } else {
+            // Current cycle started last month
+            cycleStart = new Date(year, month - 1, billingDate, 0, 0, 0);
+            cycleEnd = new Date(year, month, billingDate - 1, 23, 59, 59);
+        }
+
+        // Handle month-end edge cases
+        cycleStart = this.adjustForMonthEnd(cycleStart, billingDate);
+        cycleEnd = this.adjustForMonthEnd(cycleEnd, billingDate - 1);
+        
+        return {
+            start: cycleStart,
+            end: cycleEnd,
+            description: `${cycleStart.toLocaleDateString()} - ${cycleEnd.toLocaleDateString()}`,
+            type: 'billing',
+            card: card
+        };
+    }
+
     // Toggle view mode
     toggleViewMode(mode) {
         this.viewMode = mode;

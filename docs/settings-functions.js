@@ -77,10 +77,12 @@ document.getElementById('saveBillingDates')?.addEventListener('click', async () 
     }
 });
 
-// Dashboard mode toggle handlers
+// Dashboard mode toggle handlers - COMPLETELY REBUILT
 document.querySelectorAll('.mode-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
         const mode = btn.dataset.mode;
+        
+        console.log('\n🎯 MODE TOGGLE CLICKED:', mode);
         
         // Update active state
         document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
@@ -89,13 +91,20 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
         // Toggle view mode
         await billingCycleManager.toggleViewMode(mode);
         
-        // Reload dashboard
-        loadDashboard();
+        console.log('🎯 View mode changed to:', billingCycleManager.viewMode);
         
-        // Also update quick stats if visible
-        if (document.getElementById('quickStats').style.display !== 'none') {
-            loadUserData();
+        // Update date range display
+        updateDateRangeDisplay();
+        
+        // Trigger complete recalculation using new functions
+        await updateDashboardTotals();
+        
+        // Also reload dashboard for category breakdowns
+        if (typeof loadDashboard === 'function') {
+            loadDashboard();
         }
+        
+        console.log('🎯 Toggle complete for mode:', mode);
     });
 });
 
