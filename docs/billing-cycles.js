@@ -60,7 +60,6 @@ class BillingCycleManager {
     // Get current billing cycle for a card
     getCurrentBillingCycle(card, referenceDate = new Date()) {
         const billingDate = this.billingDates[card];
-        console.log(`Getting billing cycle for ${card}, billing date:`, billingDate);
         if (!billingDate) return null;
 
         const today = new Date(referenceDate);
@@ -85,6 +84,10 @@ class BillingCycleManager {
         cycleStart = this.adjustForMonthEnd(cycleStart, billingDate);
         cycleEnd = this.adjustForMonthEnd(cycleEnd, billingDate - 1);
 
+        // Set time to start and end of day for proper comparison
+        cycleStart.setHours(0, 0, 0, 0);
+        cycleEnd.setHours(23, 59, 59, 999);
+        
         return {
             start: cycleStart,
             end: cycleEnd,
@@ -282,9 +285,7 @@ class BillingCycleManager {
 
     // Toggle view mode
     toggleViewMode(mode) {
-        console.log('Toggling from', this.viewMode, 'to', mode);
         this.viewMode = mode;
-        console.log('Billing dates:', this.billingDates);
         return this.saveBillingSettings(currentUser.uid, { viewMode: mode });
     }
 }

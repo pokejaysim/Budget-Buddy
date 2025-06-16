@@ -204,6 +204,12 @@ auth.onAuthStateChanged(async user => {
         loadUserData();
         loadUserBudget();
         checkFirstTimeUser();
+        
+        // Initialize dashboard mode buttons
+        const currentMode = billingCycleManager.viewMode || 'calendar';
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mode === currentMode);
+        });
         // Initialize category buttons for default card (RBC)
         updateCategoryButtons();
         // Set initial form data attribute
@@ -325,10 +331,12 @@ async function loadUserData() {
             // Calendar month view (default) - always use calendar month regardless of billing date settings
             const now = new Date();
             const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
             
             const snapshot = await db.collection('expenses')
                 .where('userId', '==', currentUser.uid)
                 .where('timestamp', '>=', startOfMonth)
+                .where('timestamp', '<=', endOfMonth)
                 .get();
             
             snapshot.forEach(doc => {
