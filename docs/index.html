@@ -381,6 +381,31 @@
                         <button id="saveBillingDates" class="save-billing-btn">Save Billing Dates</button>
                     </div>
                     
+                    <!-- Recurring Expenses Management -->
+                    <div class="settings-section">
+                        <h3>Recurring Expenses</h3>
+                        <p class="settings-description">Manage your automatic monthly expenses</p>
+                        
+                        <button id="manageRecurringBtn" class="manage-recurring-btn">Manage Recurring Templates</button>
+                        
+                        <div id="recurringTemplatesList" class="recurring-templates-list" style="display: none;">
+                            <!-- Templates will be loaded here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Timezone Settings -->
+                    <div class="settings-section">
+                        <h3>Timezone</h3>
+                        <p class="settings-description">Your timezone for accurate date tracking</p>
+                        
+                        <div class="timezone-display">
+                            <span class="timezone-icon">🌍</span>
+                            <span id="currentTimezone">Loading...</span>
+                        </div>
+                        
+                        <button id="changeTimezoneBtn" class="change-timezone-btn">Change Timezone</button>
+                    </div>
+                    
                     <!-- Notification Preferences -->
                     <div class="settings-section">
                         <h3>Notifications</h3>
@@ -398,6 +423,10 @@
                             <label class="notification-option">
                                 <input type="checkbox" id="paymentDueAlert" checked>
                                 <span>Payment due reminders</span>
+                            </label>
+                            <label class="notification-option">
+                                <input type="checkbox" id="recurringGeneratedAlert" checked>
+                                <span>Recurring expense generation notifications</span>
                             </label>
                         </div>
                     </div>
@@ -649,6 +678,8 @@
     
     <!-- App Scripts -->
     <script src="firebase-config.js"></script>
+    <script src="timezone-utils.js"></script>
+    <script src="recurring-manager.js"></script>
     <script src="billing-cycles.js"></script>
     <script src="dual-tracking.js"></script>
     <script src="app.js"></script>

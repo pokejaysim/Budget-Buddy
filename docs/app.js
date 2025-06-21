@@ -199,8 +199,17 @@ auth.onAuthStateChanged(async user => {
         mainApp.classList.add('active');
         userEmail.textContent = user.email;
         
+        // Initialize timezone settings
+        await timezoneManager.initialize(user.uid);
+        
         // Initialize billing cycle settings
         await billingCycleManager.initializeSettings(user.uid);
+        
+        // Initialize recurring expense manager
+        await recurringExpenseManager.initialize(user.uid);
+        
+        // Check for billing period change
+        await recurringExpenseManager.checkBillingPeriodChange(user.uid);
         
         // Initialize dual tracking system
         await loadUserData();
@@ -225,9 +234,9 @@ auth.onAuthStateChanged(async user => {
             expenseForm.setAttribute('data-active-card', selectedCard);
         }
         
-        // Initialize date picker with today's date and max constraint
+        // Initialize date picker with today's date in user's timezone
         if (expenseDateInput) {
-            const today = new Date().toISOString().split('T')[0];
+            const today = timezoneManager.getCurrentLocalDate();
             expenseDateInput.value = today;
             expenseDateInput.max = today; // Prevent future dates
         }
@@ -254,16 +263,17 @@ expenseForm.addEventListener('submit', async (e) => {
     
     const isRecurring = document.getElementById('isRecurringCheckbox')?.checked || false;
     
-    // Get selected date or use today
+    // Get selected date or use today in user's timezone
     let expenseDate;
     if (expenseDateInput && expenseDateInput.value) {
-        // Parse the date and set to noon to avoid timezone issues
-        expenseDate = new Date(expenseDateInput.value + 'T12:00:00');
+        // Create date at start of day in user's timezone
+        expenseDate = timezoneManager.createLocalDate(expenseDateInput.value, '12:00:00');
     } else {
+        // Use current date in user's timezone
         expenseDate = new Date();
     }
     
-    console.log('💰 Adding expense for date:', expenseDate.toLocaleDateString());
+    console.log('💰 Adding expense for date:', timezoneManager.formatDateForDisplay(expenseDate));
     
     const expense = {
         amount: amount,
@@ -272,11 +282,21 @@ expenseForm.addEventListener('submit', async (e) => {
         description: descriptionInput.value.trim(),
         timestamp: firebase.firestore.Timestamp.fromDate(expenseDate),
         userId: currentUser.uid,
-        isRecurring: isRecurring
+        isRecurring: isRecurring,
+        userTimezone: timezoneManager.userTimezone // Store timezone with expense
     };
     
     try {
-        await db.collection('expenses').add(expense);
+        const expenseDoc = await db.collection('expenses').add(expense);
+        
+        // Create recurring template if marked as recurring
+        if (isRecurring) {
+            await recurringExpenseManager.createRecurringTemplate(currentUser.uid, {
+                ...expense,
+                id: expenseDoc.id,
+                timestamp: expense.timestamp
+            });
+        }
         
         // Show success message
         successMessage.classList.add('show');
@@ -297,9 +317,9 @@ expenseForm.addEventListener('submit', async (e) => {
         const recurringCheckbox = document.getElementById('isRecurringCheckbox');
         if (recurringCheckbox) recurringCheckbox.checked = false;
         
-        // Keep date as today for convenience
+        // Keep date as today for convenience in user's timezone
         if (expenseDateInput) {
-            const today = new Date().toISOString().split('T')[0];
+            const today = timezoneManager.getCurrentLocalDate();
             expenseDateInput.value = today;
         }
         
@@ -390,17 +410,24 @@ async function loadRecentExpenses() {
             `;
         } else {
             recentExpensesDiv.innerHTML = filteredExpenses.map(expense => {
-                const date = expense.timestamp ? expense.timestamp.toDate() : new Date();
-                const dateStr = date.toLocaleDateString();
-                const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const localDate = timezoneManager.toLocalDate(expense.timestamp);
+                const dateStr = localDate.displayDate;
+                const timeStr = localDate.displayTime;
+                
+                // Check if this is a reversal or has been reversed
+                const isReversal = expense.isReversal || expense.amount < 0;
+                const isReversed = expense.reversalId;
+                const itemClass = `expense-item ${expense.isRecurring ? 'recurring' : ''} ${isReversal ? 'reversal' : ''} ${isReversed ? 'reversed' : ''}`;
                 
                 return `
-                    <div class="expense-item ${expense.isRecurring ? 'recurring' : ''}">
+                    <div class="${itemClass}">
                         <div class="expense-details">
                             <div class="expense-header">
-                                <span class="expense-amount">$${expense.amount.toFixed(2)}</span>
+                                <span class="expense-amount ${isReversal ? 'refund-amount' : ''}">${isReversal ? '+' : ''}$${Math.abs(expense.amount).toFixed(2)}</span>
                                 <span class="expense-card">${expense.card.toUpperCase()}</span>
                                 ${expense.isRecurring ? '<span class="recurring-badge">🔄 Recurring</span>' : ''}
+                                ${isReversal ? '<span class="reversal-badge">↩️ Refund</span>' : ''}
+                                ${isReversed ? `<span class="reversed-badge">Refunded $${expense.reversalAmount?.toFixed(2) || expense.amount.toFixed(2)}</span>` : ''}
                             </div>
                             <div class="expense-info">
                                 <span>${getCategoryIcon(expense.category)} ${formatCategoryName(expense.category)}</span>
@@ -409,7 +436,10 @@ async function loadRecentExpenses() {
                             ${expense.description ? `<div class="expense-description">${expense.description}</div>` : ''}
                         </div>
                         <div class="expense-actions">
-                            <button class="edit-btn" onclick="editExpense('${expense.id}')">✏️</button>
+                            ${!isReversal && !isReversed ? `
+                                <button class="edit-btn" onclick="editExpense('${expense.id}')">✏️</button>
+                                <button class="reverse-btn" onclick="reverseExpense('${expense.id}')">⏪ Reverse</button>
+                            ` : ''}
                             <button class="delete-btn" onclick="deleteExpense('${expense.id}')">🗑️</button>
                         </div>
                     </div>
@@ -624,6 +654,166 @@ async function deleteExpense(expenseId) {
     } catch (error) {
         console.error('Error deleting expense:', error);
         alert('Failed to delete expense');
+    }
+}
+
+// Reverse Expense (Refund/Return)
+async function reverseExpense(expenseId) {
+    const expense = expenses.find(e => e.id === expenseId);
+    if (!expense) return;
+    
+    // Check if this expense has already been reversed
+    if (expense.reversalId) {
+        alert('This expense has already been reversed.');
+        return;
+    }
+    
+    // Check if this is a reversal itself
+    if (expense.originalExpenseId) {
+        alert('Cannot reverse a reversal transaction.');
+        return;
+    }
+    
+    // Show reversal modal
+    const reversalModal = document.getElementById('reversalModal');
+    if (!reversalModal) {
+        // Create reversal modal if it doesn't exist
+        createReversalModal();
+    }
+    
+    // Populate modal with expense details
+    document.getElementById('reversalExpenseId').value = expenseId;
+    document.getElementById('reversalOriginalAmount').textContent = `$${expense.amount.toFixed(2)}`;
+    document.getElementById('reversalAmount').value = expense.amount.toFixed(2);
+    document.getElementById('reversalAmount').max = expense.amount;
+    document.getElementById('reversalDescription').value = `Refund: ${expense.description || formatCategoryName(expense.category)}`;
+    
+    // Show expense details in modal
+    const localDate = timezoneManager.toLocalDate(expense.timestamp);
+    document.getElementById('reversalExpenseDetails').innerHTML = `
+        <div class="reversal-details">
+            <p><strong>Original Transaction:</strong></p>
+            <p>Card: ${expense.card.toUpperCase()}</p>
+            <p>Category: ${formatCategoryName(expense.category)}</p>
+            <p>Date: ${localDate.displayDate}</p>
+            <p>Description: ${expense.description || 'N/A'}</p>
+        </div>
+    `;
+    
+    document.getElementById('reversalModal').classList.add('active');
+}
+
+// Create Reversal Modal
+function createReversalModal() {
+    const modalHTML = `
+        <div id="reversalModal" class="modal">
+            <div class="modal-content">
+                <h2>Reverse Transaction</h2>
+                <div id="reversalExpenseDetails"></div>
+                <form id="reversalForm">
+                    <input type="hidden" id="reversalExpenseId">
+                    <div class="form-group">
+                        <label>Original Amount</label>
+                        <div class="original-amount" id="reversalOriginalAmount">$0.00</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Refund Amount</label>
+                        <input type="number" id="reversalAmount" class="form-input" step="0.01" min="0.01" required>
+                        <small>Enter the amount to refund (partial or full)</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" id="reversalDescription" class="form-input" placeholder="Refund description" required>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="closeReversalModal()">Cancel</button>
+                        <button type="submit" class="btn-primary">Create Reversal</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Add form submit handler
+    document.getElementById('reversalForm').addEventListener('submit', handleReversalSubmit);
+}
+
+// Close Reversal Modal
+function closeReversalModal() {
+    const modal = document.getElementById('reversalModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+// Handle Reversal Form Submit
+async function handleReversalSubmit(e) {
+    e.preventDefault();
+    
+    const expenseId = document.getElementById('reversalExpenseId').value;
+    const reversalAmount = parseFloat(document.getElementById('reversalAmount').value);
+    const description = document.getElementById('reversalDescription').value.trim();
+    
+    // Get original expense
+    const originalExpense = expenses.find(e => e.id === expenseId);
+    if (!originalExpense) {
+        alert('Original expense not found');
+        return;
+    }
+    
+    // Validate reversal amount
+    if (reversalAmount > originalExpense.amount) {
+        alert('Reversal amount cannot exceed original amount');
+        return;
+    }
+    
+    try {
+        // Create reversal transaction
+        const reversalData = {
+            amount: -reversalAmount, // Negative amount for reversal
+            card: originalExpense.card,
+            category: originalExpense.category,
+            description: description,
+            timestamp: firebase.firestore.Timestamp.now(),
+            userId: currentUser.uid,
+            isRecurring: false,
+            isReversal: true,
+            originalExpenseId: expenseId,
+            userTimezone: timezoneManager.userTimezone
+        };
+        
+        // Add reversal transaction
+        const reversalDoc = await db.collection('expenses').add(reversalData);
+        
+        // Update original expense with reversal reference
+        await db.collection('expenses').doc(expenseId).update({
+            reversalId: reversalDoc.id,
+            reversalAmount: reversalAmount,
+            reversedAt: firebase.firestore.Timestamp.now()
+        });
+        
+        // Close modal and refresh
+        closeReversalModal();
+        
+        // Show success message
+        const successMsg = document.getElementById('successMessage');
+        successMsg.textContent = 'Transaction reversed successfully!';
+        successMsg.classList.add('show');
+        setTimeout(() => successMsg.classList.remove('show'), 3000);
+        
+        // Reload data
+        await loadRecentExpenses();
+        await loadUserData();
+        
+        // Update dashboard if active
+        if (document.getElementById('dashboardView').classList.contains('active')) {
+            await loadDashboard();
+        }
+    } catch (error) {
+        console.error('Error creating reversal:', error);
+        alert('Failed to create reversal. Please try again.');
     }
 }
 

@@ -15,12 +15,63 @@ async function loadSettings() {
     const notificationSettings = billingCycleManager.userSettings?.notifications || {
         statementCloseAlert: true,
         budgetAlert: true,
-        paymentDueAlert: true
+        paymentDueAlert: true,
+        recurringGeneratedAlert: true
     };
     
     document.getElementById('statementCloseAlert').checked = notificationSettings.statementCloseAlert !== false;
     document.getElementById('budgetAlert').checked = notificationSettings.budgetAlert !== false;
     document.getElementById('paymentDueAlert').checked = notificationSettings.paymentDueAlert !== false;
+    document.getElementById('recurringGeneratedAlert').checked = notificationSettings.recurringGeneratedAlert !== false;
+    
+    // Display current timezone
+    const timezoneDisplay = document.getElementById('currentTimezone');
+    if (timezoneDisplay) {
+        timezoneDisplay.textContent = timezoneManager.getTimezoneDisplay();
+    }
+    
+    // Add timezone change handler
+    const changeTimezoneBtn = document.getElementById('changeTimezoneBtn');
+    if (changeTimezoneBtn && !changeTimezoneBtn.hasListener) {
+        changeTimezoneBtn.hasListener = true;
+        changeTimezoneBtn.addEventListener('click', async () => {
+            const newTimezone = prompt('Enter your timezone (e.g., America/New_York, Europe/London):', timezoneManager.userTimezone);
+            if (newTimezone && newTimezone !== timezoneManager.userTimezone) {
+                try {
+                    // Validate timezone
+                    new Date().toLocaleString('en-US', { timeZone: newTimezone });
+                    
+                    // Save new timezone
+                    await timezoneManager.saveTimezonePreference(currentUser.uid, newTimezone);
+                    timezoneDisplay.textContent = timezoneManager.getTimezoneDisplay();
+                    
+                    // Show success
+                    showSettingsSuccess('Timezone updated successfully!');
+                } catch (error) {
+                    alert('Invalid timezone. Please enter a valid timezone.');
+                }
+            }
+        });
+    }
+    
+    // Add recurring templates management
+    const manageRecurringBtn = document.getElementById('manageRecurringBtn');
+    const templatesList = document.getElementById('recurringTemplatesList');
+    
+    if (manageRecurringBtn && !manageRecurringBtn.hasListener) {
+        manageRecurringBtn.hasListener = true;
+        manageRecurringBtn.addEventListener('click', async () => {
+            if (templatesList.style.display === 'none') {
+                // Load and display templates
+                await loadRecurringTemplates();
+                templatesList.style.display = 'block';
+                manageRecurringBtn.textContent = 'Hide Templates';
+            } else {
+                templatesList.style.display = 'none';
+                manageRecurringBtn.textContent = 'Manage Recurring Templates';
+            }
+        });
+    }
 }
 
 // View mode toggle handlers
@@ -295,12 +346,106 @@ document.querySelectorAll('.notification-option input').forEach(checkbox => {
         const notifications = {
             statementCloseAlert: document.getElementById('statementCloseAlert').checked,
             budgetAlert: document.getElementById('budgetAlert').checked,
-            paymentDueAlert: document.getElementById('paymentDueAlert').checked
+            paymentDueAlert: document.getElementById('paymentDueAlert').checked,
+            recurringGeneratedAlert: document.getElementById('recurringGeneratedAlert').checked
         };
         
         await billingCycleManager.saveBillingSettings(currentUser.uid, { notifications });
     });
 });
+
+// Load Recurring Templates
+async function loadRecurringTemplates() {
+    if (!currentUser) return;
+    
+    const templatesList = document.getElementById('recurringTemplatesList');
+    if (!templatesList) return;
+    
+    try {
+        const templates = await recurringExpenseManager.getRecurringTemplates(currentUser.uid);
+        
+        if (templates.length === 0) {
+            templatesList.innerHTML = `
+                <div class="empty-state">
+                    <p>No recurring templates yet. Mark expenses as recurring when adding them.</p>
+                </div>
+            `;
+        } else {
+            templatesList.innerHTML = `
+                <div class="templates-grid">
+                    ${templates.map(template => `
+                        <div class="template-item ${template.isActive ? '' : 'inactive'}">
+                            <div class="template-header">
+                                <span class="template-amount">$${template.amount.toFixed(2)}</span>
+                                <span class="template-card">${template.card.toUpperCase()}</span>
+                            </div>
+                            <div class="template-details">
+                                <p><strong>${template.description}</strong></p>
+                                <p>${getCategoryIcon(template.category)} ${formatCategoryName(template.category)}</p>
+                                <p>Bills on day ${template.billingDay} of each month</p>
+                                <p class="template-status">${template.isActive ? '✅ Active' : '⏸️ Inactive'}</p>
+                            </div>
+                            <div class="template-actions">
+                                ${template.isActive ? 
+                                    `<button onclick="toggleRecurringTemplate('${template.id}', false)" class="template-btn">Deactivate</button>` :
+                                    `<button onclick="toggleRecurringTemplate('${template.id}', true)" class="template-btn">Activate</button>`
+                                }
+                                <button onclick="deleteRecurringTemplate('${template.id}')" class="template-btn delete">Delete</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading recurring templates:', error);
+        templatesList.innerHTML = '<div class="error">Failed to load templates</div>';
+    }
+}
+
+// Toggle Recurring Template
+async function toggleRecurringTemplate(templateId, activate) {
+    if (!currentUser) return;
+    
+    try {
+        await recurringExpenseManager.updateTemplate(currentUser.uid, templateId, { isActive: activate });
+        await loadRecurringTemplates();
+        
+        // Show success message
+        showSettingsSuccess(`Template ${activate ? 'activated' : 'deactivated'} successfully!`);
+    } catch (error) {
+        console.error('Error toggling template:', error);
+        alert('Failed to update template');
+    }
+}
+
+// Delete Recurring Template
+async function deleteRecurringTemplate(templateId) {
+    if (!currentUser) return;
+    
+    if (!confirm('Are you sure you want to delete this recurring template?')) return;
+    
+    try {
+        await recurringExpenseManager.deleteTemplate(currentUser.uid, templateId);
+        await loadRecurringTemplates();
+        
+        // Show success message
+        showSettingsSuccess('Template deleted successfully!');
+    } catch (error) {
+        console.error('Error deleting template:', error);
+        alert('Failed to delete template');
+    }
+}
+
+// Show settings success message
+function showSettingsSuccess(message) {
+    const successMsg = document.getElementById('successMessage');
+    if (successMsg) {
+        successMsg.textContent = message;
+        successMsg.classList.add('show');
+        setTimeout(() => successMsg.classList.remove('show'), 3000);
+    }
+}
 
 // Check for statement closing alerts
 function checkStatementAlerts() {
