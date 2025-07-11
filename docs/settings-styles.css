@@ -249,6 +249,10 @@
     border-radius: var(--radius);
     margin-bottom: 20px;
     box-shadow: var(--shadow);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
 }
 
 .period-details {
@@ -257,6 +261,28 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 16px;
+    flex: 1;
+}
+
+.cycle-history-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cycle-history-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
 }
 
 .period-title {
@@ -303,6 +329,305 @@
     height: 100%;
     background: var(--primary-color);
     transition: width 0.3s ease;
+}
+
+/* Recurring Summary in Card */
+.recurring-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px 0;
+    padding: 8px 12px;
+    background: rgba(139, 92, 246, 0.1);
+    border-radius: 8px;
+}
+
+.recurring-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.recurring-amount {
+    font-size: 18px;
+    font-weight: 600;
+    color: #8b5cf6;
+}
+
+.view-recurring-btn {
+    margin-top: 12px;
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    border: 2px solid #8b5cf6;
+    color: #8b5cf6;
+    border-radius: var(--radius);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.view-recurring-btn:hover {
+    background: #8b5cf6;
+    color: white;
+}
+
+/* Recurring Payments Modal */
+.recurring-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 20px;
+    background: var(--background);
+    border-radius: var(--radius);
+}
+
+.recurring-total-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.total-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.total-amount {
+    font-size: 32px;
+    font-weight: 700;
+    color: #8b5cf6;
+}
+
+.add-recurring-btn {
+    padding: 10px 20px;
+    background: #8b5cf6;
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.add-recurring-btn:hover {
+    background: #7c3aed;
+    transform: translateY(-1px);
+}
+
+.recurring-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 4px;
+    background: var(--background);
+    border-radius: var(--radius);
+}
+
+.recurring-tab {
+    flex: 1;
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    border-radius: calc(var(--radius) - 4px);
+    color: var(--text-secondary);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.recurring-tab.active {
+    background: white;
+    color: #8b5cf6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.recurring-payments-list {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.recurring-payment-item {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    background: var(--background);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+}
+
+.recurring-payment-item:hover {
+    transform: translateX(4px);
+}
+
+.recurring-payment-item.inactive {
+    opacity: 0.6;
+}
+
+.payment-icon {
+    font-size: 32px;
+    margin-right: 16px;
+}
+
+.payment-details {
+    flex: 1;
+}
+
+.payment-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.payment-info {
+    display: flex;
+    gap: 16px;
+    margin-top: 4px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.payment-amount {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-right: 16px;
+}
+
+.payment-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.payment-action-btn {
+    padding: 6px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.payment-action-btn:hover {
+    background: var(--background);
+}
+
+.payment-action-btn.activate {
+    color: #10b981;
+    border-color: #10b981;
+}
+
+.payment-action-btn.activate:hover {
+    background: #10b981;
+    color: white;
+}
+
+.payment-action-btn.deactivate {
+    color: #f59e0b;
+    border-color: #f59e0b;
+}
+
+.payment-action-btn.deactivate:hover {
+    background: #f59e0b;
+    color: white;
+}
+
+.payment-action-btn.delete {
+    color: #ef4444;
+    border-color: #ef4444;
+}
+
+.payment-action-btn.delete:hover {
+    background: #ef4444;
+    color: white;
+}
+
+/* Cycle History Modal */
+.history-controls {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.history-select {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--background);
+    font-size: 14px;
+}
+
+.cycle-history-content {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.cycle-summary {
+    background: var(--background);
+    padding: 20px;
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+}
+
+.cycle-summary h3 {
+    font-size: 18px;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+
+.cycle-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.category-breakdown-history {
+    margin-top: 20px;
+}
+
+.category-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.category-row:last-child {
+    border-bottom: none;
+}
+
+.category-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.category-amount {
+    font-weight: 600;
+    color: var(--text-primary);
 }
 
 /* Responsive */

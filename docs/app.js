@@ -910,37 +910,77 @@ async function addTestExpenses() {
     
     console.log('🧪 Adding test expenses for dual tracking testing...');
     
+    // Get current date
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    
     const testExpenses = [
+        // Previous month expenses
         {
-            date: new Date(2025, 4, 15), // May 15, 2025
+            date: new Date(currentYear, currentMonth - 1, 5),
             card: 'neo',
             amount: 50,
             category: 'streaming',
-            description: 'Netflix subscription test',
-            isRecurring: false
+            description: 'Netflix - Previous Cycle',
+            isRecurring: true
         },
         {
-            date: new Date(2025, 5, 5), // June 5, 2025
+            date: new Date(currentYear, currentMonth - 1, 15),
             card: 'rbc',
             amount: 75,
             category: 'food',
-            description: 'Restaurant test',
+            description: 'Restaurant - Previous Cycle',
             isRecurring: false
         },
         {
-            date: new Date(2025, 6, 8), // July 8, 2025
+            date: new Date(currentYear, currentMonth - 1, 20),
             card: 'neo',
             amount: 100,
             category: 'utilities',
-            description: 'Internet bill test',
+            description: 'Internet - Previous Cycle',
+            isRecurring: true
+        },
+        // Current month expenses
+        {
+            date: new Date(currentYear, currentMonth, 5),
+            card: 'neo',
+            amount: 50,
+            category: 'streaming',
+            description: 'Netflix - Current Cycle',
+            isRecurring: true
+        },
+        {
+            date: new Date(currentYear, currentMonth, 10),
+            card: 'rbc',
+            amount: 45,
+            category: 'groceries',
+            description: 'Grocery Store - Current',
             isRecurring: false
         },
         {
-            date: new Date(2025, 5, 15), // June 15, 2025
+            date: new Date(currentYear, currentMonth, 15),
             card: 'rbc',
-            amount: 25,
-            category: 'groceries',
-            description: 'Grocery shopping test',
+            amount: 30,
+            category: 'delivery',
+            description: 'Food Delivery - Current',
+            isRecurring: false
+        },
+        // Two months ago expenses
+        {
+            date: new Date(currentYear, currentMonth - 2, 5),
+            card: 'neo',
+            amount: 50,
+            category: 'streaming',
+            description: 'Netflix - Old Cycle',
+            isRecurring: true
+        },
+        {
+            date: new Date(currentYear, currentMonth - 2, 12),
+            card: 'rbc',
+            amount: 120,
+            category: 'shopping',
+            description: 'Shopping - Old Cycle',
             isRecurring: false
         }
     ];

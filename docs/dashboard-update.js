@@ -27,7 +27,12 @@ async function loadDashboardEnhanced() {
                 .get();
             
             snapshot.forEach(doc => {
-                expenses.push({ id: doc.id, ...doc.data() });
+                const expenseData = doc.data();
+                // Only include expenses from the current calendar month
+                const expenseCycleKey = billingCycleManager.getCycleKey(expenseData.timestamp.toDate());
+                if (billingCycleManager.isCurrentCycle(expenseCycleKey)) {
+                    expenses.push({ id: doc.id, ...expenseData });
+                }
             });
         } else {
             // Billing cycle view - get expenses for each card's cycle
@@ -44,7 +49,12 @@ async function loadDashboardEnhanced() {
                     .get();
                 
                 neoSnapshot.forEach(doc => {
-                    expenses.push({ id: doc.id, ...doc.data() });
+                    const expenseData = doc.data();
+                    // Only include expenses from the current billing cycle
+                    const expenseCycleKey = billingCycleManager.getCycleKey(expenseData.timestamp.toDate(), 'neo');
+                    if (billingCycleManager.isCurrentCycle(expenseCycleKey, 'neo')) {
+                        expenses.push({ id: doc.id, ...expenseData });
+                    }
                 });
             }
             
@@ -58,7 +68,12 @@ async function loadDashboardEnhanced() {
                     .get();
                 
                 rbcSnapshot.forEach(doc => {
-                    expenses.push({ id: doc.id, ...doc.data() });
+                    const expenseData = doc.data();
+                    // Only include expenses from the current billing cycle
+                    const expenseCycleKey = billingCycleManager.getCycleKey(expenseData.timestamp.toDate(), 'rbc');
+                    if (billingCycleManager.isCurrentCycle(expenseCycleKey, 'rbc')) {
+                        expenses.push({ id: doc.id, ...expenseData });
+                    }
                 });
             }
         }
@@ -100,6 +115,9 @@ async function loadDashboardEnhanced() {
         
         // Update card usage displays with cycle-aware information
         updateCardUsageDisplayEnhanced(cardTotalSpent, recurringTotal);
+        
+        // Update recurring total display
+        updateDashboardRecurringTotal();
         
         // Update insights based on view mode
         updateDashboardInsights(expenses, totalSpent, recurringTotal);

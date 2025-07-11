@@ -235,7 +235,7 @@ function updatePeriodInfo() {
         const period = billingCycleManager.getCurrentCalendarMonth();
         periodDetails.innerHTML = `
             <div>
-                <div class="period-title">${billingCycleManager.getPeriodTitle()}</div>
+                <div class="period-title">Current Month: ${billingCycleManager.getPeriodTitle()}</div>
                 <div class="period-dates">Full month view</div>
             </div>
             <div class="period-status">
@@ -256,7 +256,7 @@ function updatePeriodInfo() {
                     <div class="period-card-info" style="margin-bottom: 12px;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
-                                <strong style="color: #8b5cf6;">Neo Card</strong>
+                                <strong style="color: #8b5cf6;">Neo Card - Current Cycle</strong>
                                 <span class="period-dates">${billingCycleManager.formatPeriod(neoCycle)}</span>
                             </div>
                             <span class="days-badge">${neoCycle.daysRemaining} days</span>
@@ -275,7 +275,7 @@ function updatePeriodInfo() {
                     <div class="period-card-info">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
-                                <strong style="color: #0ea5e9;">RBC Card</strong>
+                                <strong style="color: #0ea5e9;">RBC Card - Current Cycle</strong>
                                 <span class="period-dates">${billingCycleManager.formatPeriod(rbcCycle)}</span>
                             </div>
                             <span class="days-badge">${rbcCycle.daysRemaining} days</span>

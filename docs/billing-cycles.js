@@ -142,6 +142,31 @@ class BillingCycleManager {
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     }
 
+    // Get cycle key for a given date (format: YYYY-MM-DD for calendar, YYYY-MM-DD_YYYY-MM-DD for billing)
+    getCycleKey(date, card = null) {
+        if (this.viewMode === 'calendar') {
+            const d = new Date(date);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        } else if (card && this.billingDates[card]) {
+            const cycle = this.getCurrentBillingCycle(card, date);
+            if (cycle) {
+                const startStr = `${cycle.start.getFullYear()}-${String(cycle.start.getMonth() + 1).padStart(2, '0')}-${String(cycle.start.getDate()).padStart(2, '0')}`;
+                const endStr = `${cycle.end.getFullYear()}-${String(cycle.end.getMonth() + 1).padStart(2, '0')}-${String(cycle.end.getDate()).padStart(2, '0')}`;
+                return `${startStr}_${endStr}`;
+            }
+        }
+        // Fallback to calendar month
+        const d = new Date(date);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    // Check if a cycle is the current cycle
+    isCurrentCycle(cycleKey, card = null) {
+        const now = new Date();
+        const currentKey = this.getCycleKey(now, card);
+        return cycleKey === currentKey;
+    }
+
     // Get current period based on view mode
     getCurrentPeriod(card = null) {
         if (this.viewMode === 'calendar') {
@@ -338,6 +363,54 @@ class BillingCycleManager {
     toggleViewMode(mode) {
         this.viewMode = mode;
         return this.saveBillingSettings(currentUser.uid, { viewMode: mode });
+    }
+
+    // Get previous billing cycles (for historical view)
+    getPreviousCycles(card, count = 6) {
+        const cycles = [];
+        const now = new Date();
+        
+        for (let i = 0; i < count; i++) {
+            // Calculate date for i months ago
+            const referenceDate = new Date(now.getFullYear(), now.getMonth() - i, now.getDate());
+            const cycle = this.getCurrentBillingCycle(card, referenceDate);
+            
+            if (cycle) {
+                const cycleKey = this.getCycleKey(referenceDate, card);
+                cycles.push({
+                    ...cycle,
+                    key: cycleKey,
+                    isCurrent: i === 0
+                });
+            }
+        }
+        
+        return cycles;
+    }
+
+    // Get previous calendar months (for historical view)
+    getPreviousMonths(count = 6) {
+        const months = [];
+        const now = new Date();
+        
+        for (let i = 0; i < count; i++) {
+            const year = now.getFullYear();
+            const month = now.getMonth() - i;
+            const start = new Date(year, month, 1);
+            const end = new Date(year, month + 1, 0, 23, 59, 59);
+            
+            const monthKey = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`;
+            
+            months.push({
+                start: start,
+                end: end,
+                key: monthKey,
+                isCurrent: i === 0,
+                monthName: start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+            });
+        }
+        
+        return months;
     }
 }
 

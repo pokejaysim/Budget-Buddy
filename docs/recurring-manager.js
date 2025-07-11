@@ -273,6 +273,15 @@ class RecurringExpenseManager {
             return false;
         }
     }
+    
+    // Alias methods for UI compatibility
+    async updateRecurringTemplate(userId, templateId, updates) {
+        return await this.updateTemplate(userId, templateId, updates);
+    }
+    
+    async deleteRecurringTemplate(userId, templateId) {
+        return await this.deleteTemplate(userId, templateId);
+    }
 
     // Check for billing period change and process expenses
     async checkBillingPeriodChange(userId) {

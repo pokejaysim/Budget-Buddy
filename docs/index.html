@@ -95,6 +95,10 @@
                 <!-- Period Info Display -->
                 <div class="period-info" id="periodInfo">
                     <div class="period-details" id="periodDetails"></div>
+                    <button class="cycle-history-btn" id="cycleHistoryBtn" title="View Previous Cycles">
+                        <span>📊</span>
+                        <span>Cycle History</span>
+                    </button>
                 </div>
                 
                 <!-- Enhanced Card Usage Display -->
@@ -108,11 +112,16 @@
                             <span id="neoUsageAmount">$0</span>
                             <span class="usage-limit">/ $700</span>
                         </div>
+                        <div class="recurring-summary">
+                            <span class="recurring-label">Monthly Recurring:</span>
+                            <span class="recurring-amount" id="neoRecurringTotal">$0</span>
+                        </div>
                         <div class="usage-percentage" id="neoUsagePercentage">0%</div>
                         <div class="progress-bar-large">
                             <div class="progress-fill-large neo-progress" id="neoProgress" style="width: 0%"></div>
                         </div>
                         <div class="usage-status" id="neoStatus">✅ On Track</div>
+                        <button class="view-recurring-btn" id="viewRecurringBtn">View Recurring Payments</button>
                     </div>
                     
                     <div class="card-usage-item rbc-card">
@@ -671,6 +680,63 @@
         </div>
     </div>
 
+    <!-- Cycle History Modal -->
+    <div id="cycleHistoryModal" class="modal">
+        <div class="modal-content modal-wide">
+            <h2>Billing Cycle History</h2>
+            <p class="modal-subtitle">View expenses from previous billing cycles</p>
+            
+            <div class="history-controls">
+                <select id="historyCardSelect" class="history-select">
+                    <option value="all">All Cards</option>
+                    <option value="neo">Neo Card</option>
+                    <option value="rbc">RBC Card</option>
+                </select>
+                <select id="historyCycleSelect" class="history-select">
+                    <!-- Cycles will be populated dynamically -->
+                </select>
+            </div>
+            
+            <div id="cycleHistoryContent" class="cycle-history-content">
+                <!-- History will be loaded here -->
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeCycleHistoryModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recurring Payments Modal -->
+    <div id="recurringPaymentsModal" class="modal">
+        <div class="modal-content modal-wide">
+            <h2>Neo Card - Recurring Payments</h2>
+            <p class="modal-subtitle">Manage your monthly subscriptions and bills</p>
+            
+            <div class="recurring-header">
+                <div class="recurring-total-section">
+                    <span class="total-label">Total Monthly Recurring:</span>
+                    <span class="total-amount" id="recurringModalTotal">$0.00</span>
+                </div>
+                <button class="add-recurring-btn" id="addRecurringBtn">+ Add New</button>
+            </div>
+            
+            <div class="recurring-tabs">
+                <button class="recurring-tab active" data-tab="active">Active</button>
+                <button class="recurring-tab" data-tab="inactive">Inactive</button>
+                <button class="recurring-tab" data-tab="all">All</button>
+            </div>
+            
+            <div id="recurringPaymentsList" class="recurring-payments-list">
+                <!-- Recurring payments will be loaded here -->
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeRecurringPaymentsModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Firebase Scripts -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -686,5 +752,7 @@
     <script src="helpers.js"></script>
     <script src="settings-functions.js"></script>
     <script src="dashboard-update.js"></script>
+    <script src="cycle-history.js"></script>
+    <script src="recurring-payments-ui.js"></script>
 </body>
 </html>
