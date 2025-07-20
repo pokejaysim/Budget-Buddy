@@ -1,11 +1,11 @@
 {
-  "name": "Budget Buddy - Expense Tracker",
-  "short_name": "Budget Buddy",
-  "description": "Track your expenses effortlessly across multiple credit cards",
+  "name": "Expense Tracker",
+  "short_name": "Expenses",
+  "description": "Simple expense tracking for your credit card",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f5f5f5",
-  "theme_color": "#1a73e8",
+  "background_color": "#F9FAFB",
+  "theme_color": "#4F46E5",
   "orientation": "portrait",
   "icons": [
     {
@@ -21,12 +21,5 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["finance", "productivity"],
-  "screenshots": [
-    {
-      "src": "screenshot1.png",
-      "sizes": "1080x1920",
-      "type": "image/png"
-    }
-  ]
+  "categories": ["finance", "productivity"]
 }

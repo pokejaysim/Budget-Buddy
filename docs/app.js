@@ -324,3 +324,10 @@ function closeModal() {
 // Make functions available globally for onclick handlers
 window.closeModal = closeModal;
 window.startNewPeriod = startNewPeriod;
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+        .then(registration => console.log('ServiceWorker registered:', registration))
+        .catch(error => console.log('ServiceWorker registration failed:', error));
+}
