@@ -3,10 +3,7 @@
 class BillingCycleManager {
     constructor() {
         this.viewMode = 'calendar'; // 'calendar' or 'billing'
-        this.billingDates = {
-            neo: null,
-            rbc: null
-        };
+        this.rbcBillingDate = null;
         this.userSettings = null;
     }
 
@@ -21,8 +18,7 @@ class BillingCycleManager {
             if (userDoc.exists) {
                 const data = userDoc.data();
                 this.userSettings = data.settings || {};
-                this.billingDates.neo = this.userSettings.neoBillingDate || null;
-                this.billingDates.rbc = this.userSettings.rbcBillingDate || null;
+                this.rbcBillingDate = this.userSettings.rbcBillingDate || null;
                 this.viewMode = this.userSettings.viewMode || 'calendar';
             }
         } catch (error) {
@@ -46,8 +42,7 @@ class BillingCycleManager {
             
             // Update local settings
             this.userSettings = { ...this.userSettings, ...settings };
-            if (settings.neoBillingDate !== undefined) this.billingDates.neo = settings.neoBillingDate;
-            if (settings.rbcBillingDate !== undefined) this.billingDates.rbc = settings.rbcBillingDate;
+            if (settings.rbcBillingDate !== undefined) this.rbcBillingDate = settings.rbcBillingDate;
             if (settings.viewMode !== undefined) this.viewMode = settings.viewMode;
             
             return true;
@@ -57,9 +52,9 @@ class BillingCycleManager {
         }
     }
 
-    // Get current billing cycle for a card
-    getCurrentBillingCycle(card, referenceDate = new Date()) {
-        const billingDate = this.billingDates[card];
+    // Get current billing cycle for RBC
+    getCurrentBillingCycle(card = 'rbc', referenceDate = new Date()) {
+        const billingDate = this.rbcBillingDate;
         if (!billingDate) return null;
 
         const today = new Date(referenceDate);
@@ -171,7 +166,7 @@ class BillingCycleManager {
     getCurrentPeriod(card = null) {
         if (this.viewMode === 'calendar') {
             return this.getCurrentCalendarMonth();
-        } else if (card && this.billingDates[card]) {
+        } else if (card === 'rbc' && this.rbcBillingDate) {
             return this.getCurrentBillingCycle(card);
         } else {
             // Fallback to calendar if no billing date set
@@ -231,25 +226,22 @@ class BillingCycleManager {
     getUpcomingStatementCloses(daysThreshold = 7) {
         const alerts = [];
         
-        ['neo', 'rbc'].forEach(card => {
-            if (this.billingDates[card]) {
-                const cycle = this.getCurrentBillingCycle(card);
-                if (cycle && cycle.daysRemaining <= daysThreshold) {
-                    alerts.push({
-                        card: card,
-                        daysRemaining: cycle.daysRemaining,
-                        closeDate: cycle.end
-                    });
-                }
+        if (this.rbcBillingDate) {
+            const cycle = this.getCurrentBillingCycle('rbc');
+            if (cycle && cycle.daysRemaining <= daysThreshold) {
+                alerts.push({
+                    card: 'rbc',
+                    daysRemaining: cycle.daysRemaining,
+                    closeDate: cycle.end
+                });
             }
-        });
+        }
         
-        return alerts.sort((a, b) => a.daysRemaining - b.daysRemaining);
+        return alerts;
     }
 
     // Initialize date selectors in settings
     initializeDateSelectors() {
-        const neoSelect = document.getElementById('neoBillingDate');
         const rbcSelect = document.getElementById('rbcBillingDate');
         
         if (!neoSelect || !rbcSelect) {
@@ -258,20 +250,17 @@ class BillingCycleManager {
         }
         
         // Clear existing options (except first)
-        neoSelect.innerHTML = '<option value="">Not set</option>';
         rbcSelect.innerHTML = '<option value="">Not set</option>';
         
         // Populate date options (1-31)
         for (let i = 1; i <= 31; i++) {
             const suffix = this.getDateSuffix(i);
             const option = `<option value="${i}">${i}${suffix}</option>`;
-            neoSelect.insertAdjacentHTML('beforeend', option);
             rbcSelect.insertAdjacentHTML('beforeend', option);
         }
         
         // Set current values
-        if (this.billingDates.neo) neoSelect.value = this.billingDates.neo;
-        if (this.billingDates.rbc) rbcSelect.value = this.billingDates.rbc;
+        if (this.rbcBillingDate) rbcSelect.value = this.rbcBillingDate;
         
         // Update current cycle display
         this.updateCycleDisplays();
@@ -290,17 +279,9 @@ class BillingCycleManager {
 
     // Update cycle displays in settings
     updateCycleDisplays() {
-        const neoCycle = document.getElementById('neoCurrentCycle');
         const rbcCycle = document.getElementById('rbcCurrentCycle');
         
-        if (this.billingDates.neo) {
-            const cycle = this.getCurrentBillingCycle('neo');
-            neoCycle.textContent = `Current cycle: ${this.formatPeriod(cycle)} (${cycle.daysRemaining} days left)`;
-        } else {
-            neoCycle.textContent = '';
-        }
-        
-        if (this.billingDates.rbc) {
+        if (this.rbcBillingDate) {
             const cycle = this.getCurrentBillingCycle('rbc');
             rbcCycle.textContent = `Current cycle: ${this.formatPeriod(cycle)} (${cycle.daysRemaining} days left)`;
         } else {
@@ -322,9 +303,9 @@ class BillingCycleManager {
         };
     }
     
-    // Get Billing Cycle Date Range for a specific card
-    getBillingDateRange(card) {
-        const billingDate = this.billingDates[card];
+    // Get Billing Cycle Date Range for RBC
+    getBillingDateRange(card = 'rbc') {
+        const billingDate = this.rbcBillingDate;
         if (!billingDate) {
             return null;
         }

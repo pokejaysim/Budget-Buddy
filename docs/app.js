@@ -1,6 +1,5 @@
 // App State
 let currentUser = null;
-let selectedCard = 'rbc';
 let selectedCategory = null;
 let expenses = [];
 let userBudget = null;
@@ -11,26 +10,8 @@ const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
-// Categories configuration
-const categoriesByCard = {
-    neo: ['streaming', 'software', 'utilities', 'insurance', 'memberships', 'other-bills'],
-    rbc: ['food', 'delivery', 'groceries', 'shopping', 'entertainment', 'other']
-};
-
-// Categories object for backward compatibility
-const categories = {
-    neo: ['streaming', 'software', 'utilities', 'insurance', 'memberships', 'other-bills'],
-    rbc: ['food', 'delivery', 'groceries', 'shopping', 'entertainment', 'other']
-};
-
-// Subscription templates for Neo card
-const subscriptionTemplates = [
-    { name: 'Netflix', amount: 15.99, category: 'streaming' },
-    { name: 'Spotify', amount: 9.99, category: 'streaming' },
-    { name: 'Phone Bill', amount: 50.00, category: 'utilities' },
-    { name: 'Internet', amount: 60.00, category: 'utilities' },
-    { name: 'Amazon Prime', amount: 14.99, category: 'memberships' }
-];
+// RBC Categories
+const categories = ['food', 'delivery', 'groceries', 'shopping', 'entertainment', 'other'];
 
 // DOM Elements
 const loginScreen = document.getElementById('loginScreen');
@@ -43,7 +24,6 @@ const amountInput = document.getElementById('amountInput');
 const descriptionInput = document.getElementById('descriptionInput');
 const expenseDateInput = document.getElementById('expenseDate');
 const successMessage = document.getElementById('successMessage');
-const neoTotal = document.getElementById('neoTotal');
 const rbcTotal = document.getElementById('rbcTotal');
 const editModal = document.getElementById('editModal');
 const editForm = document.getElementById('editForm');
@@ -86,56 +66,9 @@ navButtons.forEach(btn => {
     });
 });
 
-// Card Selection
-const cardButtons = document.querySelectorAll('.card-btn');
-cardButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-        cardButtons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        selectedCard = btn.dataset.card;
-        updateCategoryButtons();
-        
-        // Update form data attribute for styling
-        const expenseForm = document.getElementById('expenseForm');
-        if (expenseForm) {
-            expenseForm.setAttribute('data-active-card', selectedCard);
-        }
-        
-        // Show/hide recurring checkbox and templates based on card
-        const recurringSection = document.getElementById('recurringSection');
-        const templatesSection = document.getElementById('templatesSection');
-        if (recurringSection) {
-            recurringSection.style.display = selectedCard === 'neo' ? 'block' : 'none';
-        }
-        if (templatesSection) {
-            templatesSection.style.display = selectedCard === 'neo' ? 'block' : 'none';
-        }
-    });
-});
+// No card selection needed - only RBC card now
 
-// Function to update category buttons based on selected card
-function updateCategoryButtons() {
-    const categoryGrid = document.querySelector('.category-grid');
-    if (!categoryGrid) return;
-    
-    const categories = categoriesByCard[selectedCard];
-    categoryGrid.innerHTML = categories.map(category => `
-        <button type="button" class="category-btn" data-category="${category}">
-            <span class="category-icon">${getCategoryIcon(category)}</span>
-            <span class="category-name">${formatCategoryName(category)}</span>
-        </button>
-    `).join('');
-    
-    // Re-attach event listeners to new buttons
-    const newCategoryButtons = categoryGrid.querySelectorAll('.category-btn');
-    newCategoryButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            newCategoryButtons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            selectedCategory = btn.dataset.category;
-        });
-    });
-}
+// Category buttons are now static in HTML, no need to update dynamically
 
 // Helper function to format category names
 function formatCategoryName(category) {
@@ -144,30 +77,7 @@ function formatCategoryName(category) {
     ).join(' ');
 }
 
-// Function to apply subscription template
-function applyTemplate(templateIndex) {
-    const template = subscriptionTemplates[templateIndex];
-    if (!template) return;
-    
-    // Set amount
-    const amountInput = document.getElementById('amountInput');
-    if (amountInput) amountInput.value = template.amount;
-    
-    // Set description
-    const descriptionInput = document.getElementById('descriptionInput');
-    if (descriptionInput) descriptionInput.value = template.name;
-    
-    // Set category
-    selectedCategory = template.category;
-    const categoryButtons = document.querySelectorAll('.category-btn');
-    categoryButtons.forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.category === template.category);
-    });
-    
-    // Check recurring checkbox
-    const recurringCheckbox = document.getElementById('isRecurringCheckbox');
-    if (recurringCheckbox) recurringCheckbox.checked = true;
-}
+// Subscription templates removed - no longer needed
 
 // Category Selection - Initial setup
 let categoryButtons = document.querySelectorAll('.category-btn');
@@ -205,11 +115,7 @@ auth.onAuthStateChanged(async user => {
         // Initialize billing cycle settings
         await billingCycleManager.initializeSettings(user.uid);
         
-        // Initialize recurring expense manager
-        await recurringExpenseManager.initialize(user.uid);
-        
-        // Check for billing period change
-        await recurringExpenseManager.checkBillingPeriodChange(user.uid);
+        // Recurring expense manager removed
         
         // Initialize dual tracking system
         await loadUserData();
@@ -226,13 +132,7 @@ auth.onAuthStateChanged(async user => {
         if (typeof updateDateRangeDisplay === 'function') {
             updateDateRangeDisplay();
         }
-        // Initialize category buttons for default card (RBC)
-        updateCategoryButtons();
-        // Set initial form data attribute
-        const expenseForm = document.getElementById('expenseForm');
-        if (expenseForm) {
-            expenseForm.setAttribute('data-active-card', selectedCard);
-        }
+        // Categories are now static in HTML
         
         // Initialize date picker with today's date in user's timezone
         if (expenseDateInput) {
@@ -261,7 +161,6 @@ expenseForm.addEventListener('submit', async (e) => {
         return;
     }
     
-    const isRecurring = document.getElementById('isRecurringCheckbox')?.checked || false;
     
     // Get selected date or use today in user's timezone
     let expenseDate;
@@ -277,26 +176,16 @@ expenseForm.addEventListener('submit', async (e) => {
     
     const expense = {
         amount: amount,
-        card: selectedCard,
+        card: 'rbc', // Always RBC now
         category: selectedCategory,
         description: descriptionInput.value.trim(),
         timestamp: firebase.firestore.Timestamp.fromDate(expenseDate),
         userId: currentUser.uid,
-        isRecurring: isRecurring,
         userTimezone: timezoneManager.userTimezone // Store timezone with expense
     };
     
     try {
-        const expenseDoc = await db.collection('expenses').add(expense);
-        
-        // Create recurring template if marked as recurring
-        if (isRecurring) {
-            await recurringExpenseManager.createRecurringTemplate(currentUser.uid, {
-                ...expense,
-                id: expenseDoc.id,
-                timestamp: expense.timestamp
-            });
-        }
+        await db.collection('expenses').add(expense);
         
         // Show success message
         successMessage.classList.add('show');
@@ -305,7 +194,7 @@ expenseForm.addEventListener('submit', async (e) => {
         }, 2000);
         
         // Check budget status after expense
-        checkBudgetAfterExpense(selectedCard, selectedCategory, amount);
+        checkBudgetAfterExpense('rbc', selectedCategory, amount);
         
         // Reset form for quick re-entry
         amountInput.value = '';
@@ -313,9 +202,6 @@ expenseForm.addEventListener('submit', async (e) => {
         categoryButtons.forEach(b => b.classList.remove('active'));
         selectedCategory = null;
         
-        // Reset recurring checkbox
-        const recurringCheckbox = document.getElementById('isRecurringCheckbox');
-        if (recurringCheckbox) recurringCheckbox.checked = false;
         
         // Keep date as today for convenience in user's timezone
         if (expenseDateInput) {
@@ -329,7 +215,7 @@ expenseForm.addEventListener('submit', async (e) => {
         loadUserData();
         
         // Update dashboard if it's active
-        if (document.getElementById('dashboardView').classList.contains('active')) {
+        if (document.getElementById('dashboardView').classList.contains('active') && typeof loadDashboard === 'function') {
             loadDashboard();
         }
     } catch (error) {
@@ -338,18 +224,42 @@ expenseForm.addEventListener('submit', async (e) => {
     }
 });
 
-// Load User Data - COMPLETELY REBUILT to use new dual tracking system
+// Load User Data
 async function loadUserData() {
     if (!currentUser) return;
     
     console.log('\n🔄 LOAD USER DATA CALLED');
     
-    // Use the new dual tracking calculation functions
-    await updateDashboardTotals();
+    // Update RBC totals
+    await updateRBCTotal();
 }
 
-// Track active recurring filter
-let activeRecurringFilter = 'all';
+// Update RBC card total
+async function updateRBCTotal() {
+    if (!currentUser) return;
+    
+    try {
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        
+        const snapshot = await db.collection('expenses')
+            .where('userId', '==', currentUser.uid)
+            .where('timestamp', '>=', startOfMonth)
+            .get();
+        
+        let total = 0;
+        snapshot.forEach(doc => {
+            total += doc.data().amount;
+        });
+        
+        if (rbcTotal) {
+            rbcTotal.textContent = `$${total.toFixed(2)}`;
+        }
+    } catch (error) {
+        console.error('Error updating RBC total:', error);
+    }
+}
+
 
 // Load Recent Expenses
 async function loadRecentExpenses() {
@@ -379,18 +289,9 @@ async function loadRecentExpenses() {
             expenses.push({ id: doc.id, ...doc.data() });
         });
         
-        // Filter by card if selected
+        // No card filtering needed - only RBC now
         let filteredExpenses = expenses;
-        if (cardFilter !== 'all') {
-            filteredExpenses = expenses.filter(exp => exp.card === cardFilter);
-        }
         
-        // Filter by recurring status
-        if (activeRecurringFilter === 'recurring') {
-            filteredExpenses = filteredExpenses.filter(exp => exp.isRecurring === true);
-        } else if (activeRecurringFilter === 'one-time') {
-            filteredExpenses = filteredExpenses.filter(exp => !exp.isRecurring);
-        }
         
         // Filter by search term
         if (searchTerm) {
@@ -453,26 +354,7 @@ async function loadRecentExpenses() {
 }
 
 // Filter event listeners
-document.getElementById('cardFilter').addEventListener('change', loadRecentExpenses);
 document.getElementById('searchInput').addEventListener('input', loadRecentExpenses);
-
-// Recurring filter tabs
-document.addEventListener('DOMContentLoaded', () => {
-    const filterTabs = document.querySelectorAll('.filter-tab');
-    filterTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            // Update active tab
-            filterTabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            
-            // Update filter
-            activeRecurringFilter = tab.dataset.filter;
-            
-            // Reload expenses
-            loadRecentExpenses();
-        });
-    });
-});
 
 // Load Summary
 async function loadSummary() {
@@ -607,7 +489,7 @@ function editExpense(expenseId) {
     if (!expense) return;
     
     document.getElementById('editExpenseId').value = expenseId;
-    document.getElementById('editCard').value = expense.card;
+    document.getElementById('editCard').value = 'rbc'; // Always RBC now
     document.getElementById('editAmount').value = expense.amount;
     document.getElementById('editCategory').value = expense.category;
     document.getElementById('editDescription').value = expense.description || '';
@@ -626,7 +508,7 @@ editForm.addEventListener('submit', async (e) => {
     
     const expenseId = document.getElementById('editExpenseId').value;
     const updatedData = {
-        card: document.getElementById('editCard').value,
+        card: 'rbc', // Always RBC now
         amount: parseFloat(document.getElementById('editAmount').value),
         category: document.getElementById('editCategory').value,
         description: document.getElementById('editDescription').value.trim()
@@ -693,7 +575,7 @@ async function reverseExpense(expenseId) {
     document.getElementById('reversalExpenseDetails').innerHTML = `
         <div class="reversal-details">
             <p><strong>Original Transaction:</strong></p>
-            <p>Card: ${expense.card.toUpperCase()}</p>
+            <p>Card: RBC</p>
             <p>Category: ${formatCategoryName(expense.category)}</p>
             <p>Date: ${localDate.displayDate}</p>
             <p>Description: ${expense.description || 'N/A'}</p>
@@ -835,7 +717,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
             const dateStr = date.toLocaleDateString();
             const timeStr = date.toLocaleTimeString();
             
-            csv += `"${dateStr}","${timeStr}","${data.card.toUpperCase()}","${data.category}","${data.amount.toFixed(2)}","${data.description || ''}"\n`;
+            csv += `"${dateStr}","${timeStr}","RBC","${data.category}","${data.amount.toFixed(2)}","${data.description || ''}"\n`;
         });
         
         // Download CSV
@@ -855,20 +737,12 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
 // Helper function to get category icon
 function getCategoryIcon(category) {
     const icons = {
-        // RBC categories
         food: '🍔',
         delivery: '🚚',
         groceries: '🛒',
         shopping: '🛍️',
         entertainment: '🎬',
-        other: '📦',
-        // Neo categories
-        streaming: '📺',
-        software: '💻',
-        utilities: '⚡',
-        insurance: '🛡️',
-        memberships: '🎫',
-        'other-bills': '📄'
+        other: '📦'
     };
     return icons[category] || '📦';
 }
@@ -919,11 +793,11 @@ async function addTestExpenses() {
         // Previous month expenses
         {
             date: new Date(currentYear, currentMonth - 1, 5),
-            card: 'neo',
+            card: 'rbc',
             amount: 50,
-            category: 'streaming',
+            category: 'entertainment',
             description: 'Netflix - Previous Cycle',
-            isRecurring: true
+            isRecurring: false
         },
         {
             date: new Date(currentYear, currentMonth - 1, 15),
@@ -935,20 +809,20 @@ async function addTestExpenses() {
         },
         {
             date: new Date(currentYear, currentMonth - 1, 20),
-            card: 'neo',
+            card: 'rbc',
             amount: 100,
-            category: 'utilities',
+            category: 'other',
             description: 'Internet - Previous Cycle',
-            isRecurring: true
+            isRecurring: false
         },
         // Current month expenses
         {
             date: new Date(currentYear, currentMonth, 5),
-            card: 'neo',
+            card: 'rbc',
             amount: 50,
-            category: 'streaming',
+            category: 'entertainment',
             description: 'Netflix - Current Cycle',
-            isRecurring: true
+            isRecurring: false
         },
         {
             date: new Date(currentYear, currentMonth, 10),
@@ -969,11 +843,11 @@ async function addTestExpenses() {
         // Two months ago expenses
         {
             date: new Date(currentYear, currentMonth - 2, 5),
-            card: 'neo',
+            card: 'rbc',
             amount: 50,
-            category: 'streaming',
+            category: 'entertainment',
             description: 'Netflix - Old Cycle',
-            isRecurring: true
+            isRecurring: false
         },
         {
             date: new Date(currentYear, currentMonth - 2, 12),
@@ -989,12 +863,12 @@ async function addTestExpenses() {
         for (const testExpense of testExpenses) {
             const expense = {
                 amount: testExpense.amount,
-                card: testExpense.card,
+                card: 'rbc', // Always RBC now
                 category: testExpense.category,
                 description: testExpense.description,
                 timestamp: firebase.firestore.Timestamp.fromDate(testExpense.date),
                 userId: currentUser.uid,
-                isRecurring: testExpense.isRecurring
+                isRecurring: false // No recurring expenses
             };
             
             await db.collection('expenses').add(expense);
@@ -1116,16 +990,8 @@ async function loadUserBudget() {
         if (budgetDoc.exists) {
             userBudget = budgetDoc.data();
         } else {
-            // Initialize with default card-specific budget structure
+            // Initialize with default budget structure
             userBudget = {
-                neo: {
-                    food: 0,
-                    delivery: 0,
-                    groceries: 0,
-                    shopping: 0,
-                    entertainment: 0,
-                    other: 0
-                },
                 rbc: {
                     food: 0,
                     delivery: 0,
@@ -1159,8 +1025,8 @@ async function checkFirstTimeUser() {
 const budgetModal = document.getElementById('budgetModal');
 const budgetForm = document.getElementById('budgetForm');
 const manageBudgetBtn = document.getElementById('manageBudgetBtn');
-let currentBudgetCard = 'neo';
-let budgetModes = { neo: 'total', rbc: 'total' };
+let currentBudgetCard = 'rbc';
+let budgetModes = { rbc: 'total' };
 
 manageBudgetBtn.addEventListener('click', showBudgetModal);
 
@@ -1190,8 +1056,8 @@ function initializeBudgetModal() {
         });
     });
 
-    // Budget mode toggles
-    ['neo', 'rbc'].forEach(card => {
+    // Budget mode toggle for RBC
+    ['rbc'].forEach(card => {
         const modeInputs = document.querySelectorAll(`input[name="${card}BudgetMode"]`);
         modeInputs.forEach(input => {
             input.addEventListener('change', (e) => {
@@ -1222,8 +1088,8 @@ function toggleBudgetMode(card, mode) {
 }
 
 function setupBudgetInputListeners() {
-    // Total budget inputs
-    ['neo', 'rbc'].forEach(card => {
+    // Total budget input for RBC
+    ['rbc'].forEach(card => {
         const totalInput = document.getElementById(`budget${card.charAt(0).toUpperCase() + card.slice(1)}Total`);
         if (totalInput) {
             totalInput.addEventListener('input', updateBudgetTotal);
@@ -1386,87 +1252,10 @@ document.querySelectorAll('.card-view-tab').forEach(tab => {
     });
 });
 
-// Function to load subscription overview
-async function loadSubscriptionOverview() {
-    if (!currentUser) return;
-    
-    const subscriptionOverview = document.getElementById('subscriptionOverview');
-    const subscriptionList = document.getElementById('subscriptionList');
-    
-    try {
-        // Get current month's recurring expenses
-        const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        
-        const snapshot = await db.collection('expenses')
-            .where('userId', '==', currentUser.uid)
-            .where('timestamp', '>=', startOfMonth)
-            .where('isRecurring', '==', true)
-            .orderBy('timestamp', 'desc')
-            .get();
-        
-        const subscriptions = [];
-        snapshot.forEach(doc => {
-            subscriptions.push({ id: doc.id, ...doc.data() });
-        });
-        
-        if (subscriptions.length > 0) {
-            subscriptionOverview.style.display = 'block';
-            
-            subscriptionList.innerHTML = subscriptions.map(sub => {
-                const date = sub.timestamp ? sub.timestamp.toDate() : new Date();
-                return `
-                    <div class="subscription-item">
-                        <div class="subscription-icon">${getCategoryIcon(sub.category)}</div>
-                        <div class="subscription-details">
-                            <div class="subscription-name">${sub.description || formatCategoryName(sub.category)}</div>
-                            <div class="subscription-info">
-                                <span class="subscription-amount">$${sub.amount.toFixed(2)}/month</span>
-                                <span class="subscription-card">${sub.card.toUpperCase()}</span>
-                            </div>
-                        </div>
-                        <div class="subscription-date">
-                            Last charged: ${date.toLocaleDateString()}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        } else {
-            subscriptionOverview.style.display = 'none';
-        }
-    } catch (error) {
-        console.error('Error loading subscriptions:', error);
-        subscriptionOverview.style.display = 'none';
-    }
-}
+// Subscription overview removed - no longer needed
 
 // Function to update card usage displays
-function updateCardUsageDisplay(cardTotalSpent, recurringTotal) {
-    // Default Neo budget to $700
-    const neoBudget = 700;
-    const neoSpent = cardTotalSpent.neo || 0;
-    const neoPercentage = Math.round((neoSpent / neoBudget) * 100);
-    
-    // Update Neo card display
-    document.getElementById('neoUsageAmount').textContent = `$${neoSpent.toFixed(2)}`;
-    document.getElementById('neoUsagePercentage').textContent = `${neoPercentage}%`;
-    
-    const neoProgress = document.getElementById('neoProgress');
-    neoProgress.style.width = `${Math.min(neoPercentage, 100)}%`;
-    
-    // Apply color coding for Neo
-    neoProgress.classList.remove('safe', 'warning', 'danger');
-    if (neoPercentage < 70) {
-        neoProgress.classList.add('safe');
-        document.getElementById('neoStatus').textContent = '✅ On Track';
-    } else if (neoPercentage < 90) {
-        neoProgress.classList.add('warning');
-        document.getElementById('neoStatus').textContent = '⚠️ Approaching Limit';
-    } else {
-        neoProgress.classList.add('danger');
-        document.getElementById('neoStatus').textContent = '🚨 Over Budget';
-    }
-    
+function updateCardUsageDisplay(cardTotalSpent) {
     // Update RBC card display
     const rbcSpent = cardTotalSpent.rbc || 0;
     let rbcBudget = 0;
@@ -1531,57 +1320,36 @@ async function loadDashboard() {
             .where('timestamp', '>=', startOfMonth)
             .get();
         
-        // Calculate totals by card and category
-        const cardExpenses = {
-            neo: {},
-            rbc: {}
-        };
+        // Calculate totals by category
+        const categoryExpenses = {};
         
-        // Initialize category totals for both cards
-        Object.keys(categoriesByCard).forEach(card => {
-            categoriesByCard[card].forEach(cat => {
-                if (!cardExpenses[card][cat]) cardExpenses[card][cat] = 0;
-            });
+        // Initialize category totals
+        categories.forEach(cat => {
+            categoryExpenses[cat] = 0;
         });
         
         let totalSpent = 0;
-        let cardTotalSpent = { neo: 0, rbc: 0 };
-        let recurringTotal = 0;
         
         snapshot.forEach(doc => {
             const data = doc.data();
-            const card = data.card;
             const category = data.category;
             const amount = data.amount;
             
-            if (cardExpenses[card] && cardExpenses[card].hasOwnProperty(category)) {
-                cardExpenses[card][category] += amount;
-                cardTotalSpent[card] += amount;
+            if (categoryExpenses.hasOwnProperty(category)) {
+                categoryExpenses[category] += amount;
                 totalSpent += amount;
-                
-                // Track recurring expenses
-                if (data.isRecurring) {
-                    recurringTotal += amount;
-                }
             }
         });
         
-        monthlyExpenses = cardExpenses;
+        monthlyExpenses = { rbc: categoryExpenses };
         
         // Update enhanced card usage displays
-        updateCardUsageDisplay(cardTotalSpent, recurringTotal);
+        updateCardUsageDisplay({ rbc: totalSpent });
         
         // Update month insights
         document.getElementById('daysRemaining').textContent = daysRemaining;
         document.getElementById('dailyAverage').textContent = `$${(totalSpent / daysPassed).toFixed(2)}`;
-        document.getElementById('recurringTotal').textContent = `$${recurringTotal.toFixed(2)}`;
         
-        // Load subscription overview if Neo card is selected
-        if (currentDashboardView === 'neo' || (currentDashboardView === 'combined' && recurringTotal > 0)) {
-            loadSubscriptionOverview();
-        } else {
-            document.getElementById('subscriptionOverview').style.display = 'none';
-        }
         
         // Calculate budgets and display based on current view
         let displayBudget = {};
@@ -1744,9 +1512,7 @@ function renderCategoryCards(categoryTotals, budgetTotals, view, totalBudget, to
         container.appendChild(breakdownCard);
     } else {
         // Standard category cards for individual budget mode or combined view
-        const viewCategories = view === 'combined' 
-            ? [...new Set([...categoriesByCard.neo, ...categoriesByCard.rbc])]
-            : categoriesByCard[view] || [];
+        const viewCategories = categories;
         viewCategories.forEach(category => {
             const spent = categoryTotals[category] || 0;
             const budget = budgetTotals[category] || 0;
@@ -1894,21 +1660,19 @@ function generateBudgetAlerts(cardExpenses, totalSpent, totalBudget, percentUsed
         });
     }
     
-    // Card and category-specific alerts
-    ['neo', 'rbc'].forEach(card => {
-        categoriesByCard[card].forEach(category => {
-            const spent = cardExpenses[card][category] || 0;
-            const budget = userBudget[card][category] || 0;
-            const percentUsed = budget > 0 ? (spent / budget) * 100 : 0;
-            
-            if (budget > 0 && percentUsed >= 100) {
-                alerts.push({
-                    type: 'danger',
-                    icon: '📊',
-                    message: `${card.toUpperCase()} Card: ${category.charAt(0).toUpperCase() + category.slice(1)} budget exceeded!`
-                });
-            }
-        });
+    // Category-specific alerts for RBC
+    categories.forEach(category => {
+        const spent = categoryExpenses[category] || 0;
+        const budget = userBudget.rbc[category] || 0;
+        const percentUsed = budget > 0 ? (spent / budget) * 100 : 0;
+        
+        if (budget > 0 && percentUsed >= 100) {
+            alerts.push({
+                type: 'danger',
+                icon: '📊',
+                message: `${category.charAt(0).toUpperCase() + category.slice(1)} budget exceeded!`
+            });
+        }
     });
     
     // Spending insights

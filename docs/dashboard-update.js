@@ -35,34 +35,13 @@ async function loadDashboardEnhanced() {
                 }
             });
         } else {
-            // Billing cycle view - get expenses for each card's cycle
-            const neoCycle = billingCycleManager.getCurrentBillingCycle('neo');
+            // Billing cycle view - get expenses for RBC cycle
             const rbcCycle = billingCycleManager.getCurrentBillingCycle('rbc');
-            
-            // Get Neo expenses if cycle is configured
-            if (neoCycle) {
-                const neoSnapshot = await db.collection('expenses')
-                    .where('userId', '==', currentUser.uid)
-                    .where('card', '==', 'neo')
-                    .where('timestamp', '>=', neoCycle.start)
-                    .where('timestamp', '<=', neoCycle.end)
-                    .get();
-                
-                neoSnapshot.forEach(doc => {
-                    const expenseData = doc.data();
-                    // Only include expenses from the current billing cycle
-                    const expenseCycleKey = billingCycleManager.getCycleKey(expenseData.timestamp.toDate(), 'neo');
-                    if (billingCycleManager.isCurrentCycle(expenseCycleKey, 'neo')) {
-                        expenses.push({ id: doc.id, ...expenseData });
-                    }
-                });
-            }
             
             // Get RBC expenses if cycle is configured
             if (rbcCycle) {
                 const rbcSnapshot = await db.collection('expenses')
                     .where('userId', '==', currentUser.uid)
-                    .where('card', '==', 'rbc')
                     .where('timestamp', '>=', rbcCycle.start)
                     .where('timestamp', '<=', rbcCycle.end)
                     .get();
@@ -78,100 +57,46 @@ async function loadDashboardEnhanced() {
             }
         }
         
-        // Calculate totals by card and category
-        const cardExpenses = {
-            neo: {},
-            rbc: {}
-        };
+        // Calculate totals by category
+        const categoryExpenses = {};
         
         // Initialize category totals
-        Object.keys(categoriesByCard).forEach(card => {
-            categoriesByCard[card].forEach(cat => {
-                if (!cardExpenses[card][cat]) cardExpenses[card][cat] = 0;
-            });
+        categories.forEach(cat => {
+            categoryExpenses[cat] = 0;
         });
         
         let totalSpent = 0;
-        let cardTotalSpent = { neo: 0, rbc: 0 };
-        let recurringTotal = 0;
         
         expenses.forEach(expense => {
-            const card = expense.card;
             const category = expense.category;
             const amount = expense.amount;
             
-            if (cardExpenses[card] && cardExpenses[card].hasOwnProperty(category)) {
-                cardExpenses[card][category] += amount;
-                cardTotalSpent[card] += amount;
+            if (categoryExpenses.hasOwnProperty(category)) {
+                categoryExpenses[category] += amount;
                 totalSpent += amount;
-                
-                if (expense.isRecurring) {
-                    recurringTotal += amount;
-                }
             }
         });
         
-        monthlyExpenses = cardExpenses;
+        monthlyExpenses = { rbc: categoryExpenses };
         
         // Update card usage displays with cycle-aware information
-        updateCardUsageDisplayEnhanced(cardTotalSpent, recurringTotal);
-        
-        // Update recurring total display
-        updateDashboardRecurringTotal();
+        updateCardUsageDisplayEnhanced({ rbc: totalSpent });
         
         // Update insights based on view mode
-        updateDashboardInsights(expenses, totalSpent, recurringTotal);
-        
-        // Continue with existing category budget display logic
-        if (currentDashboardView === 'neo' || (currentDashboardView === 'combined' && recurringTotal > 0)) {
-            loadSubscriptionOverview();
-        } else {
-            document.getElementById('subscriptionOverview').style.display = 'none';
-        }
+        updateDashboardInsights(expenses, totalSpent, 0);
         
         // Render category budgets
-        renderCategoryBudgets(cardExpenses, cardTotalSpent);
+        renderCategoryBudgets({ rbc: categoryExpenses }, { rbc: totalSpent });
         
         // Display budget alerts  
-        generateBudgetAlerts(cardExpenses, Object.values(cardTotalSpent).reduce((sum, val) => sum + val, 0), 0, 0);
+        generateBudgetAlerts({ rbc: categoryExpenses }, totalSpent, 0, 0);
         
     } catch (error) {
         console.error('Error loading dashboard:', error);
     }
 }
 
-function updateCardUsageDisplayEnhanced(cardTotalSpent, recurringTotal) {
-    // Neo Card Display
-    const neoBudget = 700;
-    const neoSpent = cardTotalSpent.neo || 0;
-    const neoPercentage = Math.round((neoSpent / neoBudget) * 100);
-    
-    document.getElementById('neoUsageAmount').textContent = `$${neoSpent.toFixed(2)}`;
-    document.getElementById('neoUsagePercentage').textContent = `${neoPercentage}%`;
-    
-    const neoProgress = document.getElementById('neoProgress');
-    neoProgress.style.width = `${Math.min(neoPercentage, 100)}%`;
-    
-    // Update status with cycle info if in billing mode
-    let neoStatus = '✅ On Track';
-    if (neoPercentage >= 90) neoStatus = '🚨 Over Budget';
-    else if (neoPercentage >= 70) neoStatus = '⚠️ Approaching Limit';
-    
-    if (billingCycleManager.viewMode === 'billing') {
-        const neoCycle = billingCycleManager.getCurrentBillingCycle('neo');
-        if (neoCycle && neoCycle.daysRemaining <= 3) {
-            neoStatus += ` (${neoCycle.daysRemaining}d left)`;
-        }
-    }
-    
-    document.getElementById('neoStatus').textContent = neoStatus;
-    
-    // Apply color coding
-    neoProgress.classList.remove('safe', 'warning', 'danger');
-    if (neoPercentage < 70) neoProgress.classList.add('safe');
-    else if (neoPercentage < 90) neoProgress.classList.add('warning');
-    else neoProgress.classList.add('danger');
-    
+function updateCardUsageDisplayEnhanced(cardTotalSpent) {
     // RBC Card Display
     const rbcSpent = cardTotalSpent.rbc || 0;
     let rbcBudget = 0;
@@ -224,7 +149,7 @@ function updateCardUsageDisplayEnhanced(cardTotalSpent, recurringTotal) {
     }
 }
 
-function updateDashboardInsights(expenses, totalSpent, recurringTotal) {
+function updateDashboardInsights(expenses, totalSpent) {
     const now = new Date();
     let daysRemaining, daysInPeriod, daysPassed;
     
@@ -235,19 +160,10 @@ function updateDashboardInsights(expenses, totalSpent, recurringTotal) {
         daysPassed = now.getDate();
         daysRemaining = daysInPeriod - daysPassed;
     } else {
-        // Use average of both card cycles
-        const neoCycle = billingCycleManager.getCurrentBillingCycle('neo');
+        // Use RBC cycle
         const rbcCycle = billingCycleManager.getCurrentBillingCycle('rbc');
         
-        if (neoCycle && rbcCycle) {
-            daysRemaining = Math.min(neoCycle.daysRemaining, rbcCycle.daysRemaining);
-            daysInPeriod = Math.max(neoCycle.daysInCycle, rbcCycle.daysInCycle);
-            daysPassed = daysInPeriod - daysRemaining;
-        } else if (neoCycle) {
-            daysRemaining = neoCycle.daysRemaining;
-            daysInPeriod = neoCycle.daysInCycle;
-            daysPassed = daysInPeriod - daysRemaining;
-        } else if (rbcCycle) {
+        if (rbcCycle) {
             daysRemaining = rbcCycle.daysRemaining;
             daysInPeriod = rbcCycle.daysInCycle;
             daysPassed = daysInPeriod - daysRemaining;
@@ -262,51 +178,31 @@ function updateDashboardInsights(expenses, totalSpent, recurringTotal) {
     
     document.getElementById('daysRemaining').textContent = daysRemaining;
     document.getElementById('dailyAverage').textContent = daysPassed > 0 ? `$${(totalSpent / daysPassed).toFixed(2)}` : '$0';
-    document.getElementById('recurringTotal').textContent = `$${recurringTotal.toFixed(2)}`;
 }
 
-function renderCategoryBudgets(cardExpenses, cardTotalSpent) {
+function renderCategoryBudgets(cardExpenses) {
     // This function would contain the existing category budget rendering logic
     // Updated to work with both calendar and billing cycle views
     
     const container = document.getElementById('budgetCategories');
     let html = '';
     
-    // Get the appropriate categories based on current view
-    let displayCategories = [];
-    let displayExpenses = {};
+    // Get the appropriate categories
+    let displayCategories = categories;
+    let displayExpenses = cardExpenses.rbc || {};
     let displayBudget = {};
     
-    if (currentDashboardView === 'combined') {
-        // Combined view logic
-        const allCategories = [...new Set([...categoriesByCard.neo, ...categoriesByCard.rbc])];
-        displayCategories = allCategories;
-        
-        allCategories.forEach(cat => {
-            displayExpenses[cat] = (cardExpenses.neo[cat] || 0) + (cardExpenses.rbc[cat] || 0);
-            
-            let budget = 0;
-            if (userBudget.neo[cat]) budget += userBudget.neo[cat];
-            if (userBudget.rbc[cat]) budget += userBudget.rbc[cat];
-            displayBudget[cat] = budget;
-        });
-    } else {
-        // Single card view
-        const card = currentDashboardView;
-        displayCategories = categoriesByCard[card] || [];
-        displayExpenses = cardExpenses[card] || {};
-        
-        if (userBudget[card]) {
-            if (userBudget[card].mode === 'total') {
-                const totalBudget = userBudget[card].total || 0;
-                displayCategories.forEach(cat => {
-                    displayBudget[cat] = totalBudget;
-                });
-            } else {
-                displayCategories.forEach(cat => {
-                    displayBudget[cat] = userBudget[card][cat] || 0;
-                });
-            }
+    // RBC only view
+    if (userBudget.rbc) {
+        if (userBudget.rbc.mode === 'total') {
+            const totalBudget = userBudget.rbc.total || 0;
+            displayCategories.forEach(cat => {
+                displayBudget[cat] = totalBudget;
+            });
+        } else {
+            displayCategories.forEach(cat => {
+                displayBudget[cat] = userBudget.rbc[cat] || 0;
+            });
         }
     }
     
@@ -346,3 +242,10 @@ function renderCategoryBudgets(cardExpenses, cardTotalSpent) {
 
 // Replace the original loadDashboard with the enhanced version
 window.loadDashboard = loadDashboardEnhanced;
+
+// Add missing helper functions if not already defined
+if (typeof updateDashboardRecurringTotal === 'undefined') {
+    window.updateDashboardRecurringTotal = function() {
+        // Function removed - no recurring expenses
+    };
+}

@@ -232,30 +232,7 @@ body {
     overflow: hidden;
 }
 
-.card-btn[data-card="neo"] {
-    border-color: #007AFF30;
-    background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
-}
-
-.card-btn[data-card="rbc"] {
-    border-color: #FFD70030;
-    background: linear-gradient(135deg, #fffef0 0%, #ffffff 100%);
-}
-
-.card-btn[data-card="neo"].active {
-    background: #E3F2FD;
-    color: #1565C0;
-    border-color: #1976D2;
-    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
-    font-weight: 600;
-}
-
-.card-btn[data-card="rbc"].active {
-    background: #FFD700;
-    color: #333;
-    border-color: #FFD700;
-    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
-}
+/* Card selection removed - only RBC now */
 
 /* Amount Input */
 .amount-input-container {
@@ -316,37 +293,21 @@ body {
     font-weight: 600;
 }
 
-/* Neo card active categories */
-[data-active-card="neo"] .category-btn.active {
-    background: #E3F2FD;
-    border-color: #1976D2;
-    color: #1565C0;
-}
-
-/* RBC card active categories */
-[data-active-card="rbc"] .category-btn.active {
+/* Category button active state */
+.category-btn.active {
     background: #FFD700;
     color: #333;
     border-color: #FFD700;
 }
 
-/* Save button card-specific styling */
-[data-active-card="neo"] .save-btn {
-    background: #007AFF;
-    border-color: #007AFF;
-}
-
-[data-active-card="neo"] .save-btn:hover {
-    background: #0051D5;
-}
-
-[data-active-card="rbc"] .save-btn {
+/* Save button styling */
+.save-btn {
     background: #FFD700;
     color: #333;
     border-color: #FFD700;
 }
 
-[data-active-card="rbc"] .save-btn:hover {
+.save-btn:hover {
     background: #FFC700;
 }
 
@@ -364,75 +325,7 @@ body {
     margin-bottom: 20px;
 }
 
-/* Recurring Section */
-.recurring-section {
-    margin-bottom: 20px;
-    background: #f8f9fa;
-    padding: 12px;
-    border-radius: var(--radius);
-}
-
-.recurring-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-}
-
-.recurring-label input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-}
-
-/* Templates Section */
-.templates-section {
-    margin-bottom: 20px;
-}
-
-.templates-section h4 {
-    margin: 0 0 12px 0;
-    font-size: 14px;
-    color: #666;
-}
-
-.templates-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 8px;
-}
-
-.template-btn {
-    background: var(--background);
-    border: 2px solid var(--border);
-    padding: 12px 8px;
-    border-radius: var(--radius);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    font-size: 12px;
-}
-
-.template-btn:hover {
-    background: var(--secondary-color);
-    color: white;
-    border-color: var(--secondary-color);
-}
-
-.template-icon {
-    font-size: 20px;
-}
-
-.template-name {
-    font-weight: 600;
-}
-
-.template-amount {
-    color: #666;
-}
+/* Recurring and templates sections removed */
 
 /* Enhanced Card Usage Display */
 .card-usage-display {
@@ -452,11 +345,6 @@ body {
 
 .card-usage-item:hover {
     transform: translateY(-2px);
-}
-
-.card-usage-item.neo-card {
-    border: 2px solid #007AFF;
-    background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
 }
 
 .card-usage-item.rbc-card {
@@ -498,10 +386,6 @@ body {
     text-align: right;
 }
 
-.neo-card .usage-percentage {
-    color: #007AFF;
-}
-
 .rbc-card .usage-percentage {
     color: #FFD700;
 }
@@ -518,10 +402,6 @@ body {
     height: 100%;
     transition: width 0.3s ease;
     border-radius: 6px;
-}
-
-.neo-progress {
-    background: linear-gradient(90deg, #007AFF 0%, #0051D5 100%);
 }
 
 .rbc-progress {

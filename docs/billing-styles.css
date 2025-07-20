@@ -155,10 +155,6 @@
     overflow: hidden;
 }
 
-.card-range-box.neo-range {
-    border-left: 3px solid #8b5cf6;
-}
-
 .card-range-box.rbc-range {
     border-left: 3px solid #0ea5e9;
 }
@@ -174,10 +170,6 @@
     display: flex;
     align-items: center;
     gap: 6px;
-}
-
-.card-range-box.neo-range .card-label {
-    color: #8b5cf6;
 }
 
 .card-range-box.rbc-range .card-label {
@@ -206,10 +198,6 @@
 .cycle-progress-fill {
     height: 100%;
     transition: width 0.3s ease;
-}
-
-.card-range-box.neo-range .cycle-progress-fill {
-    background: #8b5cf6;
 }
 
 .card-range-box.rbc-range .cycle-progress-fill {

@@ -62,10 +62,6 @@
         <!-- Quick Stats (Hidden when dashboard is active) -->
         <div class="quick-stats" id="quickStats">
             <div class="stat-card">
-                <h3>Neo Card</h3>
-                <p class="stat-amount" id="neoTotal">$0.00</p>
-            </div>
-            <div class="stat-card">
                 <h3>RBC Card</h3>
                 <p class="stat-amount" id="rbcTotal">$0.00</p>
             </div>
@@ -103,27 +99,6 @@
                 
                 <!-- Enhanced Card Usage Display -->
                 <div class="card-usage-display">
-                    <div class="card-usage-item neo-card">
-                        <div class="card-header">
-                            <h3>Neo Credit Card</h3>
-                            <span class="card-type">Bills & Subscriptions</span>
-                        </div>
-                        <div class="usage-amount">
-                            <span id="neoUsageAmount">$0</span>
-                            <span class="usage-limit">/ $700</span>
-                        </div>
-                        <div class="recurring-summary">
-                            <span class="recurring-label">Monthly Recurring:</span>
-                            <span class="recurring-amount" id="neoRecurringTotal">$0</span>
-                        </div>
-                        <div class="usage-percentage" id="neoUsagePercentage">0%</div>
-                        <div class="progress-bar-large">
-                            <div class="progress-fill-large neo-progress" id="neoProgress" style="width: 0%"></div>
-                        </div>
-                        <div class="usage-status" id="neoStatus">✅ On Track</div>
-                        <button class="view-recurring-btn" id="viewRecurringBtn">View Recurring Payments</button>
-                    </div>
-                    
                     <div class="card-usage-item rbc-card">
                         <div class="card-header">
                             <h3>RBC Credit Card</h3>
@@ -166,11 +141,7 @@
                     </div>
                 </div>
                 
-                <div class="card-view-tabs">
-                    <button class="card-view-tab active" data-view="combined">Combined</button>
-                    <button class="card-view-tab" data-view="neo">Neo Card</button>
-                    <button class="card-view-tab" data-view="rbc">RBC Card</button>
-                </div>
+                <!-- Card view tabs removed - only RBC card now -->
                 
                 <div class="budget-categories" id="budgetCategories">
                     <!-- Category budget cards will be dynamically inserted here -->
@@ -192,11 +163,7 @@
             <!-- Entry View -->
             <div id="entryView" class="view active">
                 <form id="expenseForm" class="expense-form">
-                    <!-- Card Selection -->
-                    <div class="card-selection">
-                        <button type="button" class="card-btn" data-card="neo">Neo</button>
-                        <button type="button" class="card-btn active" data-card="rbc">RBC</button>
-                    </div>
+                    <!-- Card Selection removed - only RBC card now -->
 
                     <!-- Amount Input -->
                     <div class="amount-input-container">
@@ -241,45 +208,6 @@
                         <input type="date" id="expenseDate" class="expense-date-input" max="">
                     </div>
 
-                    <!-- Recurring Expense Section (Neo Card Only) -->
-                    <div id="recurringSection" class="recurring-section" style="display: none;">
-                        <label class="recurring-label">
-                            <input type="checkbox" id="isRecurringCheckbox">
-                            <span>Mark as recurring expense</span>
-                        </label>
-                    </div>
-
-                    <!-- Subscription Templates Section (Neo Card Only) -->
-                    <div id="templatesSection" class="templates-section" style="display: none;">
-                        <h4>Quick Add Subscriptions:</h4>
-                        <div class="templates-grid">
-                            <button type="button" class="template-btn" onclick="applyTemplate(0)">
-                                <span class="template-icon">📺</span>
-                                <span class="template-name">Netflix</span>
-                                <span class="template-amount">$15.99</span>
-                            </button>
-                            <button type="button" class="template-btn" onclick="applyTemplate(1)">
-                                <span class="template-icon">🎵</span>
-                                <span class="template-name">Spotify</span>
-                                <span class="template-amount">$9.99</span>
-                            </button>
-                            <button type="button" class="template-btn" onclick="applyTemplate(2)">
-                                <span class="template-icon">📱</span>
-                                <span class="template-name">Phone Bill</span>
-                                <span class="template-amount">$50.00</span>
-                            </button>
-                            <button type="button" class="template-btn" onclick="applyTemplate(3)">
-                                <span class="template-icon">🌐</span>
-                                <span class="template-name">Internet</span>
-                                <span class="template-amount">$60.00</span>
-                            </button>
-                            <button type="button" class="template-btn" onclick="applyTemplate(4)">
-                                <span class="template-icon">📦</span>
-                                <span class="template-name">Prime</span>
-                                <span class="template-amount">$14.99</span>
-                            </button>
-                        </div>
-                    </div>
 
                     <!-- Save Button -->
                     <button type="submit" class="save-btn">SAVE EXPENSE</button>
@@ -291,17 +219,7 @@
 
             <!-- Recent View -->
             <div id="recentView" class="view">
-                <div class="filter-tabs">
-                    <button class="filter-tab active" data-filter="all">All</button>
-                    <button class="filter-tab" data-filter="one-time">One-time</button>
-                    <button class="filter-tab" data-filter="recurring">Recurring</button>
-                </div>
                 <div class="filter-controls">
-                    <select id="cardFilter" class="filter-select">
-                        <option value="all">All Cards</option>
-                        <option value="neo">Neo Card</option>
-                        <option value="rbc">RBC Card</option>
-                    </select>
                     <input type="text" id="searchInput" class="search-input" placeholder="Search expenses...">
                 </div>
                 <div id="recentExpenses" class="expenses-list"></div>
@@ -353,24 +271,9 @@
                     <!-- Billing Cycle Configuration -->
                     <div class="settings-section">
                         <h3>Credit Card Billing Dates</h3>
-                        <p class="settings-description">Set the statement closing date for each card</p>
+                        <p class="settings-description">Set the statement closing date for your card</p>
                         
                         <div class="billing-date-config">
-                            <div class="billing-date-item">
-                                <div class="card-label neo-label">
-                                    <span class="card-icon">💳</span>
-                                    <span>Neo Card</span>
-                                </div>
-                                <div class="date-selector">
-                                    <label>Statement closes on the</label>
-                                    <select id="neoBillingDate" class="billing-date-select">
-                                        <option value="">Not set</option>
-                                    </select>
-                                    <span>of each month</span>
-                                </div>
-                                <div class="current-cycle" id="neoCurrentCycle"></div>
-                            </div>
-                            
                             <div class="billing-date-item">
                                 <div class="card-label rbc-label">
                                     <span class="card-icon">💳</span>
@@ -388,18 +291,6 @@
                         </div>
                         
                         <button id="saveBillingDates" class="save-billing-btn">Save Billing Dates</button>
-                    </div>
-                    
-                    <!-- Recurring Expenses Management -->
-                    <div class="settings-section">
-                        <h3>Recurring Expenses</h3>
-                        <p class="settings-description">Manage your automatic monthly expenses</p>
-                        
-                        <button id="manageRecurringBtn" class="manage-recurring-btn">Manage Recurring Templates</button>
-                        
-                        <div id="recurringTemplatesList" class="recurring-templates-list" style="display: none;">
-                            <!-- Templates will be loaded here -->
-                        </div>
                     </div>
                     
                     <!-- Timezone Settings -->
@@ -432,10 +323,6 @@
                             <label class="notification-option">
                                 <input type="checkbox" id="paymentDueAlert" checked>
                                 <span>Payment due reminders</span>
-                            </label>
-                            <label class="notification-option">
-                                <input type="checkbox" id="recurringGeneratedAlert" checked>
-                                <span>Recurring expense generation notifications</span>
                             </label>
                         </div>
                     </div>
