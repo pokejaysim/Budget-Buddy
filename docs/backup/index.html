@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Budget Buddy - Track Your Expenses</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="settings-styles.css">
+    <link rel="stylesheet" href="billing-styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a73e8">
+    <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="screen active">
+        <div class="login-container">
+            <h1>Budget Buddy</h1>
+            <p>Track your expenses effortlessly</p>
+            <button id="googleSignInBtn" class="google-signin-btn">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                Sign in with Google
+            </button>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="screen">
+        <!-- Header -->
+        <header class="app-header">
+            <h1>Budget Buddy</h1>
+            <div class="header-actions">
+                <span id="userEmail" class="user-email"></span>
+                <button id="signOutBtn" class="sign-out-btn">Sign Out</button>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-btn" data-view="dashboard">
+                <span class="nav-icon">🏠</span>
+                <span>Dashboard</span>
+            </button>
+            <button class="nav-btn active" data-view="entry">
+                <span class="nav-icon">+</span>
+                <span>Add</span>
+            </button>
+            <button class="nav-btn" data-view="recent">
+                <span class="nav-icon">📋</span>
+                <span>Recent</span>
+            </button>
+            <button class="nav-btn" data-view="summary">
+                <span class="nav-icon">📊</span>
+                <span>Summary</span>
+            </button>
+            <button class="nav-btn" data-view="settings">
+                <span class="nav-icon">⚙️</span>
+                <span>Settings</span>
+            </button>
+        </nav>
+
+        <!-- Quick Stats (Hidden when dashboard is active) -->
+        <div class="quick-stats" id="quickStats">
+            <div class="stat-card">
+                <h3>RBC Card</h3>
+                <p class="stat-amount" id="rbcTotal">$0.00</p>
+            </div>
+        </div>
+
+        <!-- Views Container -->
+        <div class="views-container">
+            <!-- Dashboard View -->
+            <div id="dashboardView" class="view">
+                <div class="dashboard-header">
+                    <h2>Budget Overview</h2>
+                    <div class="dashboard-controls">
+                        <div class="view-mode-switch">
+                            <button class="mode-btn active" data-mode="calendar">
+                                <span class="mode-icon">📅</span>
+                                <span>Calendar</span>
+                            </button>
+                            <button class="mode-btn" data-mode="billing">
+                                <span class="mode-icon">💳</span>
+                                <span>Billing</span>
+                            </button>
+                        </div>
+                        <button id="manageBudgetBtn" class="manage-budget-btn">⚙️ Manage Budget</button>
+                <button id="manualResetBtn" class="manual-reset-btn" title="Archive current expenses and start fresh">
+                    <span>🔄</span>
+                    <span>New Period</span>
+                </button>
+                    </div>
+                </div>
+                
+                <!-- Period Info Display -->
+                <div class="period-info" id="periodInfo">
+                    <div class="period-details" id="periodDetails"></div>
+                    <button class="cycle-history-btn" id="cycleHistoryBtn" title="View Previous Cycles">
+                        <span>📊</span>
+                        <span>Cycle History</span>
+                    </button>
+                </div>
+                
+                <!-- Enhanced Card Usage Display -->
+                <div class="card-usage-display">
+                    <div class="card-usage-item rbc-card">
+                        <div class="card-header">
+                            <h3>RBC Credit Card</h3>
+                            <span class="card-type">Daily Spending</span>
+                        </div>
+                        <div class="usage-amount">
+                            <span id="rbcUsageAmount">$0</span>
+                            <span class="usage-limit" id="rbcUsageLimit">/ $0</span>
+                        </div>
+                        <div class="usage-percentage" id="rbcUsagePercentage">0%</div>
+                        <div class="progress-bar-large">
+                            <div class="progress-fill-large rbc-progress" id="rbcProgress" style="width: 0%"></div>
+                        </div>
+                        <div class="usage-status" id="rbcStatus">Set Budget</div>
+                    </div>
+                </div>
+                
+                <!-- Month Insights -->
+                <div class="month-insights">
+                    <div class="insight-card">
+                        <span class="insight-icon">📅</span>
+                        <div class="insight-content">
+                            <span class="insight-label">Days Remaining</span>
+                            <span class="insight-value" id="daysRemaining">30</span>
+                        </div>
+                    </div>
+                    <div class="insight-card">
+                        <span class="insight-icon">💰</span>
+                        <div class="insight-content">
+                            <span class="insight-label">Daily Average</span>
+                            <span class="insight-value" id="dailyAverage">$0</span>
+                        </div>
+                    </div>
+                    <div class="insight-card">
+                        <button class="reset-period-btn" id="resetPeriodBtn" title="Start New Billing Period">
+                            <span class="reset-icon">🔄</span>
+                            <span>Reset Period</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Card view tabs removed - only RBC card now -->
+                
+                <div class="budget-categories" id="budgetCategories">
+                    <!-- Category budget cards will be dynamically inserted here -->
+                </div>
+                
+                <div class="budget-alerts" id="budgetAlerts" style="display: none;">
+                    <!-- Alert messages will be dynamically inserted here -->
+                </div>
+                
+                <!-- Subscription Overview Section -->
+                <div class="subscription-overview" id="subscriptionOverview" style="display: none;">
+                    <h3>Active Subscriptions</h3>
+                    <div id="subscriptionList">
+                        <!-- Recurring expenses will be listed here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Entry View -->
+            <div id="entryView" class="view active">
+                <form id="expenseForm" class="expense-form">
+                    <!-- Card Selection removed - only RBC card now -->
+
+                    <!-- Amount Input -->
+                    <div class="amount-input-container">
+                        <span class="currency-symbol">$</span>
+                        <input type="number" id="amountInput" class="amount-input" placeholder="0.00" step="0.01" inputmode="decimal" required autofocus>
+                    </div>
+
+                    <!-- Category Grid -->
+                    <div class="category-grid">
+                        <button type="button" class="category-btn" data-category="food">
+                            <span class="category-icon">🍔</span>
+                            <span>Food</span>
+                        </button>
+                        <button type="button" class="category-btn" data-category="delivery">
+                            <span class="category-icon">🚚</span>
+                            <span>Delivery</span>
+                        </button>
+                        <button type="button" class="category-btn" data-category="groceries">
+                            <span class="category-icon">🛒</span>
+                            <span>Groceries</span>
+                        </button>
+                        <button type="button" class="category-btn" data-category="shopping">
+                            <span class="category-icon">🛍️</span>
+                            <span>Shopping</span>
+                        </button>
+                        <button type="button" class="category-btn" data-category="entertainment">
+                            <span class="category-icon">🎬</span>
+                            <span>Entertainment</span>
+                        </button>
+                        <button type="button" class="category-btn" data-category="other">
+                            <span class="category-icon">📦</span>
+                            <span>Other</span>
+                        </button>
+                    </div>
+
+                    <!-- Description (Optional) -->
+                    <input type="text" id="descriptionInput" class="description-input" placeholder="Description (optional)">
+
+                    <!-- Date Selection -->
+                    <div class="date-input-container">
+                        <label for="expenseDate" class="date-label">Date (optional - defaults to today)</label>
+                        <input type="date" id="expenseDate" class="expense-date-input" max="">
+                    </div>
+
+
+                    <!-- Save Button -->
+                    <button type="submit" class="save-btn">SAVE EXPENSE</button>
+                </form>
+
+                <!-- Success Message -->
+                <div id="successMessage" class="success-message">Expense saved!</div>
+            </div>
+
+            <!-- Recent View -->
+            <div id="recentView" class="view">
+                <div class="filter-controls">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search expenses...">
+                </div>
+                <div id="recentExpenses" class="expenses-list"></div>
+            </div>
+
+            <!-- Summary View -->
+            <div id="summaryView" class="view">
+                <div class="summary-controls">
+                    <div class="filter-row">
+                        <button class="period-btn active" data-period="week">This Week</button>
+                        <button class="period-btn" data-period="month">This Month</button>
+                        <button class="period-btn" data-period="lastMonth">Last Month</button>
+                        <button class="period-btn" data-period="year">This Year</button>
+                        <button class="period-btn" data-period="custom">Custom</button>
+                    </div>
+                    <div class="date-filter-row" id="dateFilterRow" style="display: none;">
+                        <input type="date" id="startDate" class="date-input">
+                        <span>to</span>
+                        <input type="date" id="endDate" class="date-input">
+                        <button id="applyDateFilter" class="apply-btn">Apply</button>
+                    </div>
+                    <div class="filter-info" id="filterInfo"></div>
+                </div>
+                <div id="categoryBreakdown" class="category-breakdown"></div>
+                <button id="exportBtn" class="export-btn">Export to CSV</button>
+            </div>
+
+            <!-- Settings View -->
+            <div id="settingsView" class="view">
+                <div class="settings-container">
+                    <h2>Settings</h2>
+                    
+                    <!-- View Mode Toggle -->
+                    <div class="settings-section">
+                        <h3>Dashboard View Mode</h3>
+                        <p class="settings-description">Choose how you want to track your budget</p>
+                        <div class="view-mode-toggle">
+                            <label class="toggle-option">
+                                <input type="radio" name="viewMode" value="calendar" id="calendarMode" checked>
+                                <span>Calendar Month</span>
+                            </label>
+                            <label class="toggle-option">
+                                <input type="radio" name="viewMode" value="billing" id="billingMode">
+                                <span>Billing Cycles</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Billing Cycle Configuration -->
+                    <div class="settings-section">
+                        <h3>Credit Card Billing Dates</h3>
+                        <p class="settings-description">Set the statement closing date for your card</p>
+                        
+                        <div class="billing-date-config">
+                            <div class="billing-date-item">
+                                <div class="card-label rbc-label">
+                                    <span class="card-icon">💳</span>
+                                    <span>RBC Card</span>
+                                </div>
+                                <div class="date-selector">
+                                    <label>Statement closes on the</label>
+                                    <select id="rbcBillingDate" class="billing-date-select">
+                                        <option value="">Not set</option>
+                                    </select>
+                                    <span>of each month</span>
+                                </div>
+                                <div class="current-cycle" id="rbcCurrentCycle"></div>
+                            </div>
+                        </div>
+                        
+                        <button id="saveBillingDates" class="save-billing-btn">Save Billing Dates</button>
+                    </div>
+                    
+                    <!-- Timezone Settings -->
+                    <div class="settings-section">
+                        <h3>Timezone</h3>
+                        <p class="settings-description">Your timezone for accurate date tracking</p>
+                        
+                        <div class="timezone-display">
+                            <span class="timezone-icon">🌍</span>
+                            <span id="currentTimezone">Loading...</span>
+                        </div>
+                        
+                        <button id="changeTimezoneBtn" class="change-timezone-btn">Change Timezone</button>
+                    </div>
+                    
+                    <!-- Notification Preferences -->
+                    <div class="settings-section">
+                        <h3>Notifications</h3>
+                        <p class="settings-description">Configure when to receive alerts</p>
+                        
+                        <div class="notification-settings">
+                            <label class="notification-option">
+                                <input type="checkbox" id="statementCloseAlert" checked>
+                                <span>Statement closing reminders (3 days before)</span>
+                            </label>
+                            <label class="notification-option">
+                                <input type="checkbox" id="budgetAlert" checked>
+                                <span>Budget threshold alerts (80% spent)</span>
+                            </label>
+                            <label class="notification-option">
+                                <input type="checkbox" id="paymentDueAlert" checked>
+                                <span>Payment due reminders</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Data Management -->
+                    <div class="settings-section">
+                        <h3>Data Management</h3>
+                        <div class="data-actions">
+                            <button id="exportAllData" class="data-btn">Export All Data</button>
+                            <button id="clearOldData" class="data-btn secondary">Clear Old Data</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Developer Tools -->
+                    <div class="settings-section">
+                        <h3>Developer Tools</h3>
+                        <p class="settings-description">Testing utilities for development</p>
+                        <div class="data-actions">
+                            <button id="addTestData" class="data-btn" onclick="addTestExpenses()">Add Test Expenses</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Budget Management Modal -->
+    <div id="budgetModal" class="modal">
+        <div class="modal-content modal-wide">
+            <h2>Manage Monthly Budget</h2>
+            <p class="modal-subtitle">Set your budget for each card</p>
+            
+            <div class="card-budget-tabs">
+                <button type="button" class="budget-tab active" data-card="neo">Neo Card</button>
+                <button type="button" class="budget-tab" data-card="rbc">RBC Card</button>
+            </div>
+            
+            <form id="budgetForm">
+                <!-- Neo Card Budget -->
+                <div class="card-budget-section active" data-card="neo">
+                    <h3>Neo Card Budget</h3>
+                    
+                    <div class="budget-mode-toggle">
+                        <label class="toggle-option">
+                            <input type="radio" name="neoBudgetMode" value="total" checked>
+                            <span>Total Budget</span>
+                        </label>
+                        <label class="toggle-option">
+                            <input type="radio" name="neoBudgetMode" value="individual">
+                            <span>Category Budget</span>
+                        </label>
+                    </div>
+                    
+                    <!-- Total Budget Mode -->
+                    <div class="total-budget-section" data-card="neo">
+                        <div class="total-budget-input">
+                            <label>Monthly Budget Total</label>
+                            <input type="number" id="budgetNeoTotal" class="budget-input-large" placeholder="0" step="1" min="0">
+                        </div>
+                        <p class="budget-note">This amount will be tracked across all categories</p>
+                    </div>
+                    
+                    <!-- Individual Budget Mode -->
+                    <div class="individual-budget-section" data-card="neo" style="display: none;">
+                        <div class="budget-inputs">
+                            <div class="budget-input-group">
+                                <label>
+                                    <span class="category-icon">🍔</span>
+                                    Food
+                                </label>
+                                <input type="number" id="budgetNeoFood" class="budget-input" placeholder="0" step="1" min="0">
+                            </div>
+                            <div class="budget-input-group">
+                                <label>
+                                    <span class="category-icon">🚚</span>
+                                    Delivery
+                                </label>
+                                <input type="number" id="budgetNeoDelivery" class="budget-input" placeholder="0" step="1" min="0">
+                            </div>
+                            <div class="budget-input-group">
+                                <label>
+                                    <span class="category-icon">🛒</span>
+                                    Groceries
+                                </label>
+                                <input type="number" id="budgetNeoGroceries" class="budget-input" placeholder="0" step="1" min="0">
+                            </div>
+                            <div class="budget-input-group">
+                                <label>
+                                    <span class="category-icon">🛍️</span>
+                                    Shopping
+                                </label>
+                                <input type="number" id="budgetNeoShopping" class="budget-input" placeholder="0" step="1" min="0">
+                            </div>
+                            <div class="budget-input-group">
+                                <label>
+                                    <span class="category-icon">🎬</span>
+                                    Entertainment
+                                </label>
+                                <input type="number" id="budgetNeoEntertainment" class="budget-input" placeholder="0" step="1" min="0">
+                            </div>
+                            <div class="budget-input-group">
+                                <label>
+                                    <span class="category-icon">📦</span>
+                                    Other
+                                </label>
+                                <input type="number" id="budgetNeoOther" class="budget-input" placeholder="0" step="1" min="0">
+                            </div>
+                        </div>
+                        <div class="budget-subtotal">
+                            <span>Neo Card Total:</span>
+                            <span id="budgetNeoSubtotal">$0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- RBC Card Budget -->
+                <div class="card-budget-section" data-card="rbc">
+                    <h3>RBC Card Budget</h3>
+                    
+                    <div class="budget-mode-toggle">
+                        <label class="toggle-option">
+                            <input type="radio" name="rbcBudgetMode" value="total" checked>
+                            <span>Total Budget</span>
+                        </label>
+                        <label class="toggle-option">
+                            <input type="radio" name="rbcBudgetMode" value="individual">
+                            <span>Category Budget</span>
+                        </label>
+                    </div>
+                    
+                    <!-- Total Budget Mode -->
+                    <div class="total-budget-section" data-card="rbc">
+                        <div class="total-budget-input">
+                            <label>Monthly Budget Total</label>
+                            <input type="number" id="budgetRbcTotal" class="budget-input-large" placeholder="0" step="1" min="0">
+                        </div>
+                        <p class="budget-note">This amount will be tracked across all categories</p>
+                    </div>
+                    
+                    <!-- Individual Budget Mode -->
+                    <div class="individual-budget-section" data-card="rbc" style="display: none;">
+                        <div class="budget-inputs">
+                            <div class="budget-input-group">
+                                <label>
+                                    <span class="category-icon">🍔</span>
+                                    Food
+                                </label>
+                                <input type="number" id="budgetRbcFood" class="budget-input" placeholder="0" step="1" min="0">
+                            </div>
+                            <div class="budget-input-group">
+                                <label>
+                                    <span class="category-icon">🚚</span>
+                                    Delivery
+                                </label>
+                                <input type="number" id="budgetRbcDelivery" class="budget-input" placeholder="0" step="1" min="0">
+                            </div>
+                            <div class="budget-input-group">
+                                <label>
+                                    <span class="category-icon">🛒</span>
+                                    Groceries
+                                </label>
+                                <input type="number" id="budgetRbcGroceries" class="budget-input" placeholder="0" step="1" min="0">
+                            </div>
+                            <div class="budget-input-group">
+                                <label>
+                                    <span class="category-icon">🛍️</span>
+                                    Shopping
+                                </label>
+                                <input type="number" id="budgetRbcShopping" class="budget-input" placeholder="0" step="1" min="0">
+                            </div>
+                            <div class="budget-input-group">
+                                <label>
+                                    <span class="category-icon">🎬</span>
+                                    Entertainment
+                                </label>
+                                <input type="number" id="budgetRbcEntertainment" class="budget-input" placeholder="0" step="1" min="0">
+                            </div>
+                            <div class="budget-input-group">
+                                <label>
+                                    <span class="category-icon">📦</span>
+                                    Other
+                                </label>
+                                <input type="number" id="budgetRbcOther" class="budget-input" placeholder="0" step="1" min="0">
+                            </div>
+                        </div>
+                        <div class="budget-subtotal">
+                            <span>RBC Card Total:</span>
+                            <span id="budgetRbcSubtotal">$0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="budget-total">
+                    <span>Total Monthly Budget:</span>
+                    <span id="budgetTotalPreview">$0</span>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeBudgetModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Budget</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h2>Edit Expense</h2>
+            <form id="editForm">
+                <input type="hidden" id="editExpenseId">
+                <div class="form-group">
+                    <label>Card</label>
+                    <select id="editCard" class="form-input">
+                        <option value="neo">Neo Card</option>
+                        <option value="rbc">RBC Card</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="number" id="editAmount" class="form-input" step="0.01" inputmode="decimal" required>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="editCategory" class="form-input">
+                        <option value="food">Food</option>
+                        <option value="delivery">Delivery</option>
+                        <option value="groceries">Groceries</option>
+                        <option value="shopping">Shopping</option>
+                        <option value="entertainment">Entertainment</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="editDescription" class="form-input">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeEditModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cycle History Modal -->
+    <div id="cycleHistoryModal" class="modal">
+        <div class="modal-content modal-wide">
+            <h2>Billing Cycle History</h2>
+            <p class="modal-subtitle">View expenses from previous billing cycles</p>
+            
+            <div class="history-controls">
+                <select id="historyCardSelect" class="history-select">
+                    <option value="all">All Cards</option>
+                    <option value="neo">Neo Card</option>
+                    <option value="rbc">RBC Card</option>
+                </select>
+                <select id="historyCycleSelect" class="history-select">
+                    <!-- Cycles will be populated dynamically -->
+                </select>
+            </div>
+            
+            <div id="cycleHistoryContent" class="cycle-history-content">
+                <!-- History will be loaded here -->
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeCycleHistoryModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Period Modal -->
+    <div id="resetPeriodModal" class="modal">
+        <div class="modal-content">
+            <h2>Start New Billing Period</h2>
+            <p class="modal-subtitle">Are you sure you want to start a new billing period?</p>
+            
+            <div class="reset-warning">
+                <p>📊 This will archive all current expenses and reset your totals to $0.00</p>
+                <p>📁 Your expense history will be preserved and can be viewed in the Summary section</p>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeResetModal()">Cancel</button>
+                <button type="button" class="btn-primary" onclick="confirmResetPeriod()">🔄 Start New Period</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <!-- App Scripts -->
+    <script src="firebase-config.js"></script>
+    <script src="timezone-utils.js"></script>
+    <script src="billing-cycles.js"></script>
+    <script src="app.js"></script>
+    <script src="helpers.js"></script>
+    <script src="settings-functions.js"></script>
+    <script src="dashboard-update.js"></script>
+    <script src="cycle-history.js"></script>
+</body>
+</html>
