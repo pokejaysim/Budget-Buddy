@@ -1,11 +1,11 @@
 const CACHE_NAME = 'expense-tracker-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/app.js',
-  '/firebase-config.js',
-  '/manifest.json'
+  './',
+  './index.html',
+  './styles.css',
+  './app.js',
+  './firebase-config.js',
+  './manifest.json'
 ];
 
 self.addEventListener('install', event => {

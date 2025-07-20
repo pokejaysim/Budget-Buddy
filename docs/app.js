@@ -173,13 +173,13 @@ async function getExpensesSincePeriod(periodStart) {
 }
 
 // Update Summary
-function updateSummary(expenses, periodStart) {
+function updateSummary(expenses, periodStartDate) {
     const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-    const days = Math.max(1, Math.ceil((new Date() - periodStart) / (1000 * 60 * 60 * 24)));
+    const days = Math.max(1, Math.ceil((new Date() - periodStartDate) / (1000 * 60 * 60 * 24)));
     const daily = total / days;
     
     totalAmount.textContent = `$${total.toFixed(2)}`;
-    periodStart.textContent = formatDate(periodStart);
+    periodStart.textContent = formatDate(periodStartDate);
     dayCount.textContent = days;
     dailyAvg.textContent = `$${daily.toFixed(2)}`;
 }
@@ -327,7 +327,7 @@ window.startNewPeriod = startNewPeriod;
 
 // Register Service Worker
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js')
+    navigator.serviceWorker.register('./sw.js')
         .then(registration => console.log('ServiceWorker registered:', registration))
         .catch(error => console.log('ServiceWorker registration failed:', error));
 }
