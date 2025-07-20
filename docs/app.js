@@ -234,31 +234,6 @@ async function loadUserData() {
     await updateRBCTotal();
 }
 
-// Update RBC card total
-async function updateRBCTotal() {
-    if (!currentUser) return;
-    
-    try {
-        const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        
-        const snapshot = await db.collection('expenses')
-            .where('userId', '==', currentUser.uid)
-            .where('timestamp', '>=', startOfMonth)
-            .get();
-        
-        let total = 0;
-        snapshot.forEach(doc => {
-            total += doc.data().amount;
-        });
-        
-        if (rbcTotal) {
-            rbcTotal.textContent = `$${total.toFixed(2)}`;
-        }
-    } catch (error) {
-        console.error('Error updating RBC total:', error);
-    }
-}
 
 
 // Load Recent Expenses
@@ -1702,3 +1677,116 @@ function generateBudgetAlerts(cardExpenses, totalSpent, totalBudget, percentUsed
         alertsContainer.style.display = 'none';
     }
 }
+
+// Reset Period Functions
+const manualResetBtn = document.getElementById('manualResetBtn');
+const resetPeriodModal = document.getElementById('resetPeriodModal');
+
+// Add event listener for reset button
+if (manualResetBtn) {
+    manualResetBtn.addEventListener('click', () => {
+        resetPeriodModal.classList.add('active');
+    });
+}
+
+// Close reset modal
+function closeResetModal() {
+    resetPeriodModal.classList.remove('active');
+}
+
+// Confirm reset period
+async function confirmResetPeriod() {
+    if (\!currentUser) return;
+    
+    try {
+        // Create a period marker in Firebase
+        const now = new Date();
+        const periodEnd = {
+            timestamp: firebase.firestore.Timestamp.fromDate(now),
+            userId: currentUser.uid,
+            type: 'manual_reset',
+            totalSpent: 0 // Will be calculated below
+        };
+        
+        // Calculate total spent in current period
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const snapshot = await db.collection('expenses')
+            .where('userId', '==', currentUser.uid)
+            .where('timestamp', '>=', startOfMonth)
+            .get();
+        
+        let total = 0;
+        snapshot.forEach(doc => {
+            total += doc.data().amount;
+        });
+        
+        periodEnd.totalSpent = total;
+        
+        // Save period marker
+        await db.collection('period_markers').add(periodEnd);
+        
+        // Close modal
+        closeResetModal();
+        
+        // Reload data
+        await loadUserData();
+        if (document.getElementById('dashboardView').classList.contains('active')) {
+            await loadDashboard();
+        } else if (document.getElementById('recentView').classList.contains('active')) {
+            await loadRecentExpenses();
+        }
+        
+        // Show success message
+        const successMsg = document.getElementById('successMessage');
+        successMsg.textContent = 'New billing period started\!';
+        successMsg.classList.add('show');
+        setTimeout(() => successMsg.classList.remove('show'), 3000);
+        
+    } catch (error) {
+        console.error('Error resetting period:', error);
+        alert('Failed to reset period. Please try again.');
+    }
+}
+
+// Update the loadUserData function to respect period markers
+async function updateRBCTotal() {
+    if (\!currentUser) return;
+    
+    try {
+        // Get the most recent period marker
+        const markerSnapshot = await db.collection('period_markers')
+            .where('userId', '==', currentUser.uid)
+            .orderBy('timestamp', 'desc')
+            .limit(1)
+            .get();
+        
+        let startDate = new Date();
+        startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+        
+        if (\!markerSnapshot.empty) {
+            const marker = markerSnapshot.docs[0].data();
+            const markerDate = marker.timestamp.toDate();
+            // Use the later of: start of month or period marker
+            if (markerDate > startDate) {
+                startDate = markerDate;
+            }
+        }
+        
+        const snapshot = await db.collection('expenses')
+            .where('userId', '==', currentUser.uid)
+            .where('timestamp', '>=', startDate)
+            .get();
+        
+        let total = 0;
+        snapshot.forEach(doc => {
+            total += doc.data().amount;
+        });
+        
+        if (rbcTotal) {
+            rbcTotal.textContent = `$${total.toFixed(2)}`;
+        }
+    } catch (error) {
+        console.error('Error updating RBC total:', error);
+    }
+}
+

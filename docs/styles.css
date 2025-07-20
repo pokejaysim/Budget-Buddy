@@ -234,6 +234,70 @@ body {
 
 /* Card selection removed - only RBC now */
 
+/* Manual Reset Button */
+.manual-reset-btn {
+    background: #ff4444;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.manual-reset-btn:hover {
+    background: #cc0000;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 68, 68, 0.3);
+}
+
+/* Reset Period Button in Insights */
+.reset-period-btn {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ff4444 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    width: 100%;
+    justify-content: center;
+}
+
+.reset-period-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 68, 68, 0.3);
+}
+
+.reset-icon {
+    font-size: 20px;
+}
+
+/* Reset Warning */
+.reset-warning {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 20px 0;
+}
+
+.reset-warning p {
+    margin: 8px 0;
+    color: #856404;
+    font-size: 14px;
+}
+
 /* Amount Input */
 .amount-input-container {
     position: relative;

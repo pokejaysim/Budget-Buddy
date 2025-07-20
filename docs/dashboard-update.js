@@ -13,10 +13,28 @@ async function loadDashboardEnhanced() {
         let expenses = [];
         let periodStart, periodEnd;
         
+        // Get the most recent period marker to determine start date
+        const markerSnapshot = await db.collection('period_markers')
+            .where('userId', '==', currentUser.uid)
+            .orderBy('timestamp', 'desc')
+            .limit(1)
+            .get();
+        
+        let periodStart;
+        const now = new Date();
+        
+        if (!markerSnapshot.empty) {
+            const marker = markerSnapshot.docs[0].data();
+            const markerDate = marker.timestamp.toDate();
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            // Use the later of: start of month or period marker
+            periodStart = markerDate > startOfMonth ? markerDate : startOfMonth;
+        } else {
+            periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        }
+        
         if (billingCycleManager.viewMode === 'calendar') {
             // Calendar month view
-            const now = new Date();
-            periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
             periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
             
             // Get expenses for calendar month
@@ -27,12 +45,7 @@ async function loadDashboardEnhanced() {
                 .get();
             
             snapshot.forEach(doc => {
-                const expenseData = doc.data();
-                // Only include expenses from the current calendar month
-                const expenseCycleKey = billingCycleManager.getCycleKey(expenseData.timestamp.toDate());
-                if (billingCycleManager.isCurrentCycle(expenseCycleKey)) {
-                    expenses.push({ id: doc.id, ...expenseData });
-                }
+                expenses.push({ id: doc.id, ...doc.data() });
             });
         } else {
             // Billing cycle view - get expenses for RBC cycle
@@ -40,19 +53,17 @@ async function loadDashboardEnhanced() {
             
             // Get RBC expenses if cycle is configured
             if (rbcCycle) {
+                // Use the later of: cycle start or period marker
+                const cycleStart = periodStart > rbcCycle.start ? periodStart : rbcCycle.start;
+                
                 const rbcSnapshot = await db.collection('expenses')
                     .where('userId', '==', currentUser.uid)
-                    .where('timestamp', '>=', rbcCycle.start)
+                    .where('timestamp', '>=', cycleStart)
                     .where('timestamp', '<=', rbcCycle.end)
                     .get();
                 
                 rbcSnapshot.forEach(doc => {
-                    const expenseData = doc.data();
-                    // Only include expenses from the current billing cycle
-                    const expenseCycleKey = billingCycleManager.getCycleKey(expenseData.timestamp.toDate(), 'rbc');
-                    if (billingCycleManager.isCurrentCycle(expenseCycleKey, 'rbc')) {
-                        expenses.push({ id: doc.id, ...expenseData });
-                    }
+                    expenses.push({ id: doc.id, ...doc.data() });
                 });
             }
         }
