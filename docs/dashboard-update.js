@@ -19,8 +19,6 @@ async function loadDashboardEnhanced() {
             .orderBy('timestamp', 'desc')
             .limit(1)
             .get();
-        
-        let periodStart;
         const now = new Date();
         
         if (!markerSnapshot.empty) {

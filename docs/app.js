@@ -10,6 +10,11 @@ const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
+// Debug Firebase initialization
+console.log('Firebase initialized:', typeof firebase !== 'undefined');
+console.log('Auth available:', typeof auth !== 'undefined');
+console.log('Current URL:', window.location.href);
+
 // RBC Categories
 const categories = ['food', 'delivery', 'groceries', 'shopping', 'entertainment', 'other'];
 
@@ -91,11 +96,26 @@ categoryButtons.forEach(btn => {
 
 // Authentication
 googleSignInBtn.addEventListener('click', () => {
+    console.log('Sign in button clicked');
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider).catch(error => {
-        console.error('Sign in error:', error);
-        alert('Failed to sign in. Please try again.');
-    });
+    auth.signInWithPopup(provider)
+        .then((result) => {
+            console.log('Sign in successful:', result.user.email);
+        })
+        .catch(error => {
+            console.error('Sign in error:', error);
+            console.error('Error code:', error.code);
+            console.error('Error message:', error.message);
+            
+            // More specific error messages
+            if (error.code === 'auth/unauthorized-domain') {
+                alert('This domain is not authorized for sign-in. Please contact support.');
+            } else if (error.code === 'auth/popup-blocked') {
+                alert('Sign-in popup was blocked. Please allow popups for this site.');
+            } else {
+                alert(`Sign-in failed: ${error.message}`);
+            }
+        });
 });
 
 signOutBtn.addEventListener('click', () => {
@@ -1696,7 +1716,7 @@ function closeResetModal() {
 
 // Confirm reset period
 async function confirmResetPeriod() {
-    if (\!currentUser) return;
+    if (!currentUser) return;
     
     try {
         // Create a period marker in Firebase
@@ -1738,7 +1758,7 @@ async function confirmResetPeriod() {
         
         // Show success message
         const successMsg = document.getElementById('successMessage');
-        successMsg.textContent = 'New billing period started\!';
+        successMsg.textContent = 'New billing period started!';
         successMsg.classList.add('show');
         setTimeout(() => successMsg.classList.remove('show'), 3000);
         
@@ -1750,7 +1770,7 @@ async function confirmResetPeriod() {
 
 // Update the loadUserData function to respect period markers
 async function updateRBCTotal() {
-    if (\!currentUser) return;
+    if (!currentUser) return;
     
     try {
         // Get the most recent period marker
@@ -1763,7 +1783,7 @@ async function updateRBCTotal() {
         let startDate = new Date();
         startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
         
-        if (\!markerSnapshot.empty) {
+        if (!markerSnapshot.empty) {
             const marker = markerSnapshot.docs[0].data();
             const markerDate = marker.timestamp.toDate();
             // Use the later of: start of month or period marker
